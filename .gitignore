@@ -1,1 +1,6 @@
 Intermedia
+*_API.h
+*.Target.json
+/cmake-build-debug/
+/binary/
+/.idea/
