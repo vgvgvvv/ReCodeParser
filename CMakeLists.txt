@@ -6,7 +6,7 @@ if(NOT REMAKE_ROOT_PATH)
     include(${ReMakeDir}/re-cmake/Init.cmake)
     ReMake_InitProject()
 
-    ReMake_AddSubDirsRec("${ReMakeDir}")
+    ReMake_AddSubDirsRec("Intermedia/ReMake")
     ReMake_AddSubDirsRec("Test")
 endif()
 
