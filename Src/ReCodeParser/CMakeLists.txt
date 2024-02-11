@@ -1,0 +1,7 @@
+
+set(TargetName ReCodeParser)
+ReMake_AddTarget(
+    TARGET_NAME ${TargetName}
+    MODE SHARED
+    INC "ReCodeParser/Public"
+)
