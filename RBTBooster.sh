@@ -43,6 +43,7 @@ initReBuildTool()
         else
             echo "pull ReBuildTool"
             cd ReBuildTool
+            git reset --hard
             git pull
             git submodule update
             cd BuildScript
@@ -88,13 +89,12 @@ buildProject()
     ./ReBuildTool --ProjectRoot $CURRENT_DIR --Mode Build --Target $TARGET_NAME --BoosterSource $CURRENT_SCRIPT_FULL_PATH
 }
 
-main() {
-   
-
+main() 
+{
     if [ "$CURRENT_MODE" = "--init" ]; then
         initReBuildTool
         exit 0
-    if [ "$CURRENT_MODE" = "--build" ]; then
+    elif [ "$CURRENT_MODE" = "--build" ]; then
         buildProject
         exit 0
     else
@@ -104,6 +104,7 @@ main() {
         exit 0
     fi
 }
+
 
 main
 
