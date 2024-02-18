@@ -5,4 +5,5 @@ ReMake_AddTarget(
     MODE SHARED
     INC "Public"
     LIB "ReCppCommon"
+        "ReClass"
 )
