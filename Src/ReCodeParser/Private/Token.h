@@ -1,7 +1,7 @@
 #pragma once
 #include "ReCppCommon.h"
 
-enum class ECppTokenType
+enum class ETokenType
 {
 	None = 0,
 	Identifier,
@@ -10,7 +10,7 @@ enum class ECppTokenType
 	Max
 };
 
-enum class ECppTokenConstType
+enum class ETokenConstType
 {
 	None,
 	Byte,
@@ -23,9 +23,8 @@ enum class ECppTokenConstType
 	Nullptr
 };
 
-class FCppToken final
+class Token final
 {
-	using namespace Re;
 	friend class FBaseParser;
 
 public:
@@ -34,7 +33,7 @@ public:
 
 private:
 	// Token Type
-	ECppTokenType TokenType = ECppTokenType::None;
+	ETokenType TokenType = ETokenType::None;
 
 	// Token Position
 	int32 StartPos = 0;
@@ -44,7 +43,7 @@ private:
 
 public:
 	// Storage for Const
-	ECppTokenConstType ConstType = ECppTokenConstType::None;
+	ETokenConstType ConstType = ETokenConstType::None;
 	union
 	{
 		// TOKEN_Const values.
@@ -68,12 +67,12 @@ public:
 
 	Re::String GetConstantValue() const;
 
-	ECppTokenType GetTokenType() const
+	ETokenType GetTokenType() const
 	{
 		return TokenType;
 	}
 
-	ECppTokenConstType GetConstType() const
+	ETokenConstType GetConstType() const
 	{
 		return ConstType;
 	}
@@ -81,18 +80,18 @@ public:
 	// match
 	bool Matches(const char Ch) const
 	{
-		return TokenType == ECppTokenType::Symbol && Identifier[0] == Ch && Identifier[1] == 0;
+		return TokenType == ETokenType::Symbol && Identifier[0] == Ch && Identifier[1] == 0;
 	}
 
 	bool Matches(const char* Str) const
 	{
-		return (TokenType == ECppTokenType::Identifier || TokenType == ECppTokenType::Symbol)
+		return (TokenType == ETokenType::Identifier || TokenType == ETokenType::Symbol)
 			&& std::strcmp(Identifier, Str) == 0;
 	}
 
 	bool IsBool() const
 	{
-		return ConstType == ECppTokenConstType::Bool;
+		return ConstType == ETokenConstType::Bool;
 	}
 
 #pragma region setters
@@ -101,56 +100,56 @@ public:
 	void SetIdentifier(const char* InString)
 	{
 		InitToken();
-		TokenType = ECppTokenType::Identifier;
+		TokenType = ETokenType::Identifier;
 		std::strncpy(Identifier, InString, NameSize);
 	}
 
 	void SetNullptr()
 	{
-		ConstType = ECppTokenConstType::Nullptr;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::Nullptr;
+		TokenType = ETokenType::Const;
 	}
 
 	void SetConstInt64(int64 InInt64)
 	{
-		ConstType = ECppTokenConstType::Int64;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::Int64;
+		TokenType = ETokenType::Const;
 		Int64 = InInt64;
 	}
 
 	void SetConstInt(int32 InInt)
 	{
-		ConstType = ECppTokenConstType::Int;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::Int;
+		TokenType = ETokenType::Const;
 		Int = InInt;
 	}
 
 	void SetConstBool(bool InBool)
 	{
-		ConstType = ECppTokenConstType::Bool;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::Bool;
+		TokenType = ETokenType::Const;
 		NativeBool = InBool;
 	}
 
 	void SetConstFloat(float InFloat)
 	{
-		ConstType = ECppTokenConstType::Float;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::Float;
+		TokenType = ETokenType::Const;
 		Float = InFloat;
 	}
 
 	void SetConstDouble(double InDouble)
 	{
-		ConstType = ECppTokenConstType::Double;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::Double;
+		TokenType = ETokenType::Const;
 		Double = InDouble;
 	}
 
 	void SetConstString(const char* InString, int32 MaxLength = MaxStringConstSize)
 	{
 		RE_ASSERT(MaxLength > 0);
-		ConstType = ECppTokenConstType::String;
-		TokenType = ECppTokenType::Const;
+		ConstType = ETokenConstType::String;
+		TokenType = ETokenType::Const;
 		if(InString != String)
 		{
 			std::strncpy(String, InString, MaxLength);
@@ -161,7 +160,7 @@ public:
 	{
 		String[0] = InChar;
 		String[1] = 0;
-		TokenType = ECppTokenType::Const;
+		TokenType = ETokenType::Const;
 	}
 
 #pragma endregion
@@ -170,39 +169,39 @@ public:
 
 	bool GetConstInt(int32& OutInt) const
 	{
-		if(TokenType == ECppTokenType::Const)
+		if(TokenType == ETokenType::Const)
 		{
-			if(ConstType == ECppTokenConstType::Int64)
+			if(ConstType == ETokenConstType::Int64)
 			{
 				OutInt = static_cast<int32>(Int64);
 				return true;
 			}
-			else if(ConstType == ECppTokenConstType::Int)
+			else if(ConstType == ETokenConstType::Int)
 			{
 				OutInt = Int;
 				return true;
 			}
-			else if(ConstType == ECppTokenConstType::Byte)
+			else if(ConstType == ETokenConstType::Byte)
 			{
 				OutInt = Byte;
 				return true;
 			}
-			else if(ConstType == ECppTokenConstType::Float)
+			else if(ConstType == ETokenConstType::Float)
 			{
 				OutInt = static_cast<int32>(Float);
 				return true;
 			}
-			else if(ConstType == ECppTokenConstType::Double)
+			else if(ConstType == ETokenConstType::Double)
 			{
 				OutInt = static_cast<int32>(Double);
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Bool)
+			else if (ConstType == ETokenConstType::Bool)
 			{
 				OutInt = NativeBool ? 1 : 0;
 				return true;
 			}
-			else if(ConstType == ECppTokenConstType::Nullptr)
+			else if(ConstType == ETokenConstType::Nullptr)
 			{
 				OutInt = 0;
 				return true;
@@ -213,39 +212,39 @@ public:
 
 	bool GetConstInt64(int64& OutInt) const
 	{
-		if (TokenType == ECppTokenType::Const)
+		if (TokenType == ETokenType::Const)
 		{
-			if (ConstType == ECppTokenConstType::Int64)
+			if (ConstType == ETokenConstType::Int64)
 			{
 				OutInt = Int64;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Int)
+			else if (ConstType == ETokenConstType::Int)
 			{
 				OutInt = Int;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Byte)
+			else if (ConstType == ETokenConstType::Byte)
 			{
 				OutInt = Byte;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Float)
+			else if (ConstType == ETokenConstType::Float)
 			{
 				OutInt = static_cast<int64>(Float);
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Double)
+			else if (ConstType == ETokenConstType::Double)
 			{
 				OutInt = static_cast<int64>(Double);
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Bool)
+			else if (ConstType == ETokenConstType::Bool)
 			{
 				OutInt = NativeBool ? 1 : 0;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Nullptr)
+			else if (ConstType == ETokenConstType::Nullptr)
 			{
 				OutInt = 0;
 				return true;
@@ -256,39 +255,39 @@ public:
 
 	bool GetBool(bool& OutBool) const
 	{
-		if (TokenType == ECppTokenType::Const)
+		if (TokenType == ETokenType::Const)
 		{
-			if (ConstType == ECppTokenConstType::Int64)
+			if (ConstType == ETokenConstType::Int64)
 			{
 				OutBool = Int64 != 0;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Int)
+			else if (ConstType == ETokenConstType::Int)
 			{
 				OutBool = Int != 0;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Byte)
+			else if (ConstType == ETokenConstType::Byte)
 			{
 				OutBool = Byte != 0;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Float)
+			else if (ConstType == ETokenConstType::Float)
 			{
 				OutBool = Float != 0;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Double)
+			else if (ConstType == ETokenConstType::Double)
 			{
 				OutBool = Double != 0;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Bool)
+			else if (ConstType == ETokenConstType::Bool)
 			{
 				OutBool = NativeBool;
 				return true;
 			}
-			else if (ConstType == ECppTokenConstType::Nullptr)
+			else if (ConstType == ETokenConstType::Nullptr)
 			{
 				OutBool = false;
 				return true;

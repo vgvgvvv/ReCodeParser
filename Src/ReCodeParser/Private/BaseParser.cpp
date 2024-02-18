@@ -1,12 +1,11 @@
 #include "BaseParser.h"
 
 #include "Token.h"
-#include "ErrorException.h"
 
 void FBaseParser::InitParserSource(const Re::String& InFileName, const char* SourceBuffer)
 {
 	Input = SourceBuffer;
-	InputLen = FCString::Strlen(SourceBuffer);
+	InputLen = static_cast<int32>(std::strlen(SourceBuffer));
 	InputPos = 0;
 	InputLine = 1;
 	PrevPos = 0;
@@ -63,7 +62,7 @@ Loop:
 			if (!bInsideComment)
 			{
 				ClearComment();
-				FParserError::Throwf("Unexpected '*/' outside of comment");
+				SetError(Re::String{"Unexpected '*/' outside of comment : at "} + GetLocation());
 			}
 
 			/** Asterisk and slash always end comment. */
@@ -82,7 +81,7 @@ Loop:
 		if (c == 0)
 		{
 			ClearComment();
-			FParserError::Throwf("End of class header encountered inside comment");
+			SetError("End of class header encountered inside comment at : " + GetLocation());
 		}
 		goto Loop;
 	}
@@ -162,6 +161,21 @@ void FBaseParser::UngetChar()
 	InputLine = PrevLine;
 }
 
+void FBaseParser::SetError(const Re::String& str)
+{
+	Errors.push(str);
+}
+
+bool FBaseParser::GetError(Re::String& str)
+{
+	if(Errors.empty())
+	{
+		return false;
+	}
+	str = Errors.top();
+	return true;
+}
+
 bool FBaseParser::IsEOL(char c)
 {
 	return c == '\n' || c == '\r' || c == 0;
@@ -179,7 +193,7 @@ void FBaseParser::ClearComment()
 	PrevComment.clear();
 }
 
-Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
+Re::SharedPtr<Token> FBaseParser::GetToken(bool bNoConsts)
 {
 	char c = GetLeadingChar();
 	if (c == 0)
@@ -188,9 +202,9 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 		return nullptr;
 	}
 
-	auto Token = RE_MAKE_SHARED(FCppToken)();
-	Token->StartPos = PrevPos;
-	Token->StartLine = PrevLine;
+	auto token = RE_MAKE_SHARED(Token)();
+	token->StartPos = PrevPos;
+	token->StartLine = PrevLine;
 
 	char p = PeekChar();
 	if((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '_'))
@@ -198,38 +212,38 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 		int32 Length = 0;
 		do
 		{
-			Token->Identifier[Length++] = c;
-			if(Length > FCppToken::NameSize)
+			token->Identifier[Length++] = c;
+			if(Length > Token::NameSize)
 			{
-				FParserError::Throwf("Identifer length exceeds maximum of %d", (int32)FCppToken::NameSize);
-				Length = ((int32)FCppToken::NameSize) - 1;
+				SetError(Re::String{"Identifer length exceeds maximum of "} + std::to_string(Token::NameSize) + " : at " + GetLocation());
+				Length = ((int32)Token::NameSize) - 1;
 				break;
 			}
 			c = GetChar();
 		} while ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c == '_'));
 		UngetChar();
-		Token->Identifier[Length] = 0;
+		token->Identifier[Length] = 0;
 		// Assume this is an identifier unless we find otherwise.
-		Token->TokenType = ECppTokenType::Identifier;
+		token->TokenType = ETokenType::Identifier;
 
 		if(!bNoConsts)
 		{
-			if(Token->Matches("true"))
+			if(token->Matches("true"))
 			{
-				Token->SetConstBool(true);
-				return Token;
+				token->SetConstBool(true);
+				return token;
 			}
-			else if(Token->Matches("false"))
+			else if(token->Matches("false"))
 			{
-				Token->SetConstBool(false);
-				return Token;
+				token->SetConstBool(false);
+				return token;
 			}
-			else if(Token->Matches("nullptr"))
+			else if(token->Matches("nullptr"))
 			{
-				Token->SetNullptr();
+				token->SetNullptr();
 			}
 		}
-		return Token;
+		return token;
 	}
 	// if const values are allowed, determine whether the non-identifier token represents a const
 	else if (!bNoConsts && ((c >= '0' && c <= '9') || ((c == '+' || c == '-') && (p >= '0' && p <= '9'))))
@@ -250,18 +264,18 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 				bIsHex = true;
 			}
 
-			Token->Identifier[Length++] = c;
-			if (Length >= FCppToken::NameSize)
+			token->Identifier[Length++] = c;
+			if (Length >= Token::NameSize)
 			{
-				FParserError::Throwf("Number length exceeds maximum of %d ", (int32)FCppToken::NameSize);
-				Length = ((int32)FCppToken::NameSize) - 1;
+				SetError(Re::String{"Number length exceeds maximum of "} + std::to_string(Token::NameSize) + ": at " + GetLocation() );
+				Length = ((int32)Token::NameSize) - 1;
 				break;
 			}
 			
-			c = FChar::ToUpper(GetChar());
+			c = static_cast<char>(std::toupper(GetChar()));
 		} while ((c >= '0' && c <= '9') || (!bIsFloat && c == '.') || (!bIsHex && c == 'X') || (bIsHex && c >= 'A' && c <= 'F'));
 
-		Token->Identifier[Length] = 0;
+		token->Identifier[Length] = 0;
 		if (!bIsFloat || c != 'F')
 		{
 			UngetChar();
@@ -269,18 +283,18 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 
 		if (bIsFloat)
 		{
-			Token->SetConstFloat(FCString::Atof(Token->Identifier));
+			token->SetConstFloat(std::atof(token->Identifier));
 		}
 		else if (bIsHex)
 		{
-			char* End = Token->Identifier + FCString::Strlen(Token->Identifier);
-			Token->SetConstInt64(FCString::Strtoi64(Token->Identifier, &End, 0));
+			char* End = token->Identifier + std::strlen(token->Identifier);
+			token->SetConstInt64(std::strtoll(token->Identifier, &End, 0));
 		}
 		else
 		{
-			Token->SetConstInt64(FCString::Atoi64(Token->Identifier));
+			token->SetConstInt64(std::atoll(token->Identifier));
 		}
-		return Token;
+		return token;
 	}
 	else if (c == '\'')
 	{
@@ -314,42 +328,42 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 		if(IsUnicode)
 		{
 			Re::String WS;
-			WS.AppendChar(FrontChar);
+			WS += FrontChar;
 			for(int i = 0; i < 4; i ++)
 			{
 				auto SubChar = GetChar(/*bLiteral=*/ true);
-				WS.AppendChar(SubChar);
+				WS += SubChar;
 			}
 
 			c = GetChar(/*bLiteral=*/ true);
 			if (c != '\'')
 			{
-				FParserError::Throwf(TEXT("%s %s %s"), TEXT("Unterminated character constant"), *FileName, *GetLocation());
+				SetError(Re::String{"Unterminated character constant : at "} + FileName + " : " + GetLocation());
 				UngetChar();
 			}
 			
 			// TODO parse unicode char
-			UE_LOG(LogTemp, Warning, TEXT("UnHandled Unicode Char : \\%s"), *WS);
-			Token->SetConstChar(FrontChar);
+			RE_LOG(Re::String{"UnHandled Unicode Char : "} + WS);
+			token->SetConstChar(FrontChar);
 		}
 		else
 		{
 			c = GetChar(/*bLiteral=*/ true);
 			if (c != '\'')
 			{
-				FParserError::Throwf(TEXT("%s %s %s"), TEXT("Unterminated character constant"), *FileName, *GetLocation());
+				SetError(Re::String{"Unterminated character constant : at "} + FileName + " : " + GetLocation());
 				UngetChar();
 			}
 
 		}
-		Token->SetConstChar(ActualCharLiteral);
+		token->SetConstChar(ActualCharLiteral);
 
-		return Token;
+		return token;
 	}
 	else if (c == '"')
 	{
 		// String constant.
-		char Temp[FCppToken::MaxStringConstSize];
+		char Temp[Token::MaxStringConstSize];
 		int32 Length = 0;
 		c = GetChar(/*bLiteral=*/ true);
 		while ((c != '"') && !IsEOL(c))
@@ -368,11 +382,12 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 				}
 			}
 			Temp[Length++] = c;
-			if (Length >= FCppToken::MaxStringConstSize)
+			if (Length >= Token::MaxStringConstSize)
 			{
-				FParserError::Throwf("String constant exceeds maximum of %d characters", (int32)FCppToken::MaxStringConstSize);
+				SetError(Re::String{"String constant exceeds maximum of "} + std::to_string(Token::MaxStringConstSize) +
+					" characters : at " + FileName + " : " + GetLocation());
 				c = '\"';
-				Length = ((int32)FCppToken::MaxStringConstSize) - 1;
+				Length = ((int32)Token::MaxStringConstSize) - 1;
 				break;
 			}
 			c = GetChar(/*bLiteral=*/ true);
@@ -381,18 +396,18 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 
 		if (c != '"')
 		{
-			FParserError::Throwf("Unterminated string constant: %s %s %s", Temp, *FileName, *GetLocation());
+			SetError(Re::String{"Unterminated string constant: "} + Temp + " at " + FileName + " : " + GetLocation());
 			UngetChar();
 		}
 
-		Token->SetConstString(Temp);
-		return Token;
+		token->SetConstString(Temp);
+		return token;
 	}
 	else
 	{
 		// Symbol.
 		int32 Length = 0;
-		Token->Identifier[Length++] = c;
+		token->Identifier[Length++] = c;
 
 		// Handle special 2-character symbols.
 		#define PAIR(cc,dd) ((c==cc)&&(d==dd)) /* Comparison macro for convenience */
@@ -418,12 +433,12 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 				|| PAIR(':', ':')
 				)
 		{
-			Token->Identifier[Length++] = d;
+			token->Identifier[Length++] = d;
 			if (c == '>' && d == '>')
 			{
 				if (GetChar() == '>')
 				{
-					Token->Identifier[Length++] = '>';
+					token->Identifier[Length++] = '>';
 				}
 				else
 				{
@@ -437,23 +452,23 @@ Re::SharedPtr<FCppToken> FBaseParser::GetToken(bool bNoConsts)
 		}
 		#undef PAIR
 
-		Token->Identifier[Length] = 0;
-		Token->TokenType = ECppTokenType::Symbol;
+		token->Identifier[Length] = 0;
+		token->TokenType = ETokenType::Symbol;
 
-		return Token;
+		return token;
 	}
 }
 
-Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokensUntil(Re::Func<bool(FCppToken&)> Condition, bool bNoConst, const Re::String& DebugMessage)
+Re::Vector<Re::SharedPtr<Token>> FBaseParser::GetTokensUntil(Re::Func<bool(Token&)> Condition, bool bNoConst, const Re::String& DebugMessage)
 {
-	Re::Vector<Re::SharedPtr<FCppToken>> Tokens;
+	Re::Vector<Re::SharedPtr<Token>> Tokens;
 	while(true)
 	{
 		auto CurrentToken = GetToken(bNoConst);
 
 		if(CurrentToken == nullptr)
 		{
-			FParserError::Throwf("Exit Early !! %s at %s %s", *DebugMessage, *FileName, *GetLocation());
+			SetError(Re::String{"Exit Early !! "} + DebugMessage + " at " + FileName + " : " + GetLocation());
 		}
 
 		Tokens.push_back(CurrentToken);
@@ -467,16 +482,16 @@ Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokensUntil(Re::Func<bool(F
 	return Tokens;
 }
 
-Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokenUntilMatch(const char Match, bool bNoConst, const Re::String& DebugMessage)
+Re::Vector<Re::SharedPtr<Token>> FBaseParser::GetTokenUntilMatch(const char Match, bool bNoConst, const Re::String& DebugMessage)
 {
-	Re::Vector<Re::SharedPtr<FCppToken>> Tokens;
+	Re::Vector<Re::SharedPtr<Token>> Tokens;
 	while (true)
 	{
 		auto CurrentToken = GetToken(bNoConst);
 		
 		if(CurrentToken == nullptr)
 		{
-			FParserError::Throwf(TEXT("Exit Early !! %s at %s %s"), *DebugMessage, *FileName, *GetLocation());
+			SetError(Re::String{"Exit Early !! "} + DebugMessage + " at " + FileName + " : " + GetLocation());
 		}
 		
 		Tokens.push_back(CurrentToken);
@@ -490,15 +505,15 @@ Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokenUntilMatch(const char 
 	return Tokens;
 }
 
-Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokenUntilMatch(const char* Match, bool bNoConst, const Re::String& DebugMessage)
+Re::Vector<Re::SharedPtr<Token>> FBaseParser::GetTokenUntilMatch(const char* Match, bool bNoConst, const Re::String& DebugMessage)
 {
-	Re::Vector<Re::SharedPtr<FCppToken>> Tokens;
+	Re::Vector<Re::SharedPtr<Token>> Tokens;
 	while (true)
 	{
 		auto CurrentToken = GetToken(bNoConst);
 		if(CurrentToken == nullptr)
 		{
-			FParserError::Throwf(TEXT("Exit Early !! %s at %s %s"), *DebugMessage, *FileName, *GetLocation());
+			SetError(Re::String{"Exit Early !! "} + DebugMessage + " : at " + FileName + " : " + GetLocation());
 		}
 
 		Tokens.push_back(CurrentToken);
@@ -511,16 +526,16 @@ Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokenUntilMatch(const char*
 
 	return Tokens;
 }
-Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokensUntilPairMatch(const char Left, const char Right, const Re::String& DebugMessage)
+Re::Vector<Re::SharedPtr<Token>> FBaseParser::GetTokensUntilPairMatch(const char Left, const char Right, const Re::String& DebugMessage)
 {
 	int MatchCount = 1;
-	Re::Vector<Re::SharedPtr<FCppToken>> Tokens;
+	Re::Vector<Re::SharedPtr<Token>> Tokens;
 	while(true)
 	{
 		auto CurrentToken = GetToken(false);
 		if(CurrentToken == nullptr)
 		{
-			FParserError::Throwf(TEXT("Exit Early !! %s at %s %s"), *DebugMessage, *FileName, *GetLocation());
+			SetError(Re::String{"Exit Early !! "} +  DebugMessage + " : at " + FileName + " : " + GetLocation());
 		}
 
 		Tokens.push_back(CurrentToken);
@@ -541,13 +556,13 @@ Re::Vector<Re::SharedPtr<FCppToken>> FBaseParser::GetTokensUntilPairMatch(const 
 	return Tokens;
 }
 
-void FBaseParser::UngetToken(const Re::SharedPtr<FCppToken>& Token)
+void FBaseParser::UngetToken(const Re::SharedPtr<Token>& Token)
 {
 	InputPos = Token->StartPos;
 	InputLine = Token->StartLine;
 }
 
-Re::SharedPtr<FCppToken> FBaseParser::GetIdentifier(bool bNoConsts)
+Re::SharedPtr<Token> FBaseParser::GetIdentifier(bool bNoConsts)
 {
 	auto Token = GetToken(bNoConsts);
 	if (!Token)
@@ -555,7 +570,7 @@ Re::SharedPtr<FCppToken> FBaseParser::GetIdentifier(bool bNoConsts)
 		return nullptr;
 	}
 
-	if (Token->TokenType == ECppTokenType::Identifier)
+	if (Token->TokenType == ETokenType::Identifier)
 	{
 		return Token;
 	}
@@ -564,7 +579,7 @@ Re::SharedPtr<FCppToken> FBaseParser::GetIdentifier(bool bNoConsts)
 	return nullptr;
 }
 
-Re::SharedPtr<FCppToken> FBaseParser::GetSymbol()
+Re::SharedPtr<Token> FBaseParser::GetSymbol()
 {
 	auto Token = GetToken();
 	if (!Token)
@@ -572,7 +587,7 @@ Re::SharedPtr<FCppToken> FBaseParser::GetSymbol()
 		return nullptr;
 	}
 
-	if (Token->TokenType == ECppTokenType::Symbol)
+	if (Token->TokenType == ETokenType::Symbol)
 	{
 		return Token;
 	}
@@ -598,7 +613,7 @@ bool FBaseParser::GetConstInt(int32& Result, const char* Tag)
 
 	if(Tag != nullptr)
 	{
-		FParserError::Throwf("%s : Missing constant integer", Tag);
+		SetError(Re::String{"Missing constant integer : "} + Tag + " : at " + GetLocation());
 	}
 
 	return false;
@@ -621,7 +636,7 @@ bool FBaseParser::GetConstInt64(int64& Result, const char* Tag)
 
 	if (Tag != nullptr)
 	{
-		FParserError::Throwf("%s : Missing constant integer", Tag);
+		SetError(Re::String{"Missing constant integer : "} +  Tag + " : at " + GetLocation());
 	}
 
 	return false;
@@ -632,7 +647,7 @@ bool FBaseParser::MatchIdentifier(const char* Match)
 	auto Token = GetToken();
 	if(Token != nullptr)
 	{
-		if(Token->GetTokenType() == ECppTokenType::Identifier &&
+		if(Token->GetTokenType() == ETokenType::Identifier &&
 			Token->Matches(Match))
 		{
 			return true;
@@ -650,8 +665,8 @@ bool FBaseParser::MatchConstInt(const char* Match)
 	auto Token = GetToken();
 	if(Token)
 	{
-		if(Token->GetTokenType() == ECppTokenType::Const 
-			&& (Token->GetConstType() == ECppTokenConstType::Int || Token->GetConstType() == ECppTokenConstType::Int64)
+		if(Token->GetTokenType() == ETokenType::Const
+			&& (Token->GetConstType() == ETokenConstType::Int || Token->GetConstType() == ETokenConstType::Int64)
 			&& Token->GetTokenName() == Match)
 		{
 			return true;
@@ -670,9 +685,9 @@ bool FBaseParser::MatchAnyConstInt()
 	auto Token = GetToken();
 	if (Token)
 	{
-		if (Token->GetTokenType() == ECppTokenType::Const
-			&& (Token->GetConstType() == ECppTokenConstType::Int 
-				|| Token->GetConstType() == ECppTokenConstType::Int64))
+		if (Token->GetTokenType() == ETokenType::Const
+			&& (Token->GetConstType() == ETokenConstType::Int
+				|| Token->GetConstType() == ETokenConstType::Int64))
 		{
 			return true;
 		}
@@ -693,7 +708,7 @@ bool FBaseParser::PeekIdentifier(const char* Match)
 		return false;
 	}
 	UngetToken(Token);
-	return Token->GetTokenType() == ECppTokenType::Identifier
+	return Token->GetTokenType() == ETokenType::Identifier
 		&& Token->GetTokenName() == Match;
 }
 
@@ -702,7 +717,7 @@ bool FBaseParser::MatchSymbol(const char Match)
 	auto Token = GetToken(true);
 	if(Token)
 	{
-		if(Token->GetTokenType() == ECppTokenType::Symbol 
+		if(Token->GetTokenType() == ETokenType::Symbol
 			&& Token->GetRawTokenName()[0] == Match 
 			&& Token->GetRawTokenName()[1] == 0)
 		{
@@ -720,7 +735,7 @@ bool FBaseParser::MatchSymbol(const char* Match)
 	auto Token = GetToken(true);
 	if (Token)
 	{
-		if (Token->GetTokenType() == ECppTokenType::Symbol
+		if (Token->GetTokenType() == ETokenType::Symbol
 			&& Token->GetTokenName() == Match)
 		{
 			return true;
@@ -733,7 +748,7 @@ bool FBaseParser::MatchSymbol(const char* Match)
 	return false;
 }
 
-bool FBaseParser::MatchToken(Re::Func<bool(const FCppToken&)> Condition)
+bool FBaseParser::MatchToken(Re::Func<bool(const Token&)> Condition)
 {
 	auto Token = GetToken(true);
 	if (Token)
@@ -766,18 +781,18 @@ void FBaseParser::RequireSemi()
 		auto Token = GetToken();
 		if(Token)
 		{
-			FParserError::Throwf("Missing ';' before %s", Token->GetRawTokenName());
+			SetError(Re::String{"Missing ';' before "} + Token->GetRawTokenName() + " : at " + GetLocation());
 		}
 		else
 		{
-			FParserError::Throwf("Missing ';'");
+			SetError(Re::String{"Missing ';'"} + " : at " + GetLocation());
 		}
 	}
 }
 
-FString FBaseParser::GetLocation() const
+Re::String FBaseParser::GetLocation() const
 {
-	return FString::Printf("%d:%d", InputLine, InputPos);
+	return std::to_string(InputLen) + ":" + std::to_string(InputPos);
 }
 
 bool FBaseParser::PeekSymbol(const char Match)
@@ -788,7 +803,7 @@ bool FBaseParser::PeekSymbol(const char Match)
 		return false;
 	}
 	UngetToken(Token);
-	return Token->GetTokenType() == ECppTokenType::Symbol
+	return Token->GetTokenType() == ETokenType::Symbol
 		&& Token->GetRawTokenName()[0] == Match
 		&& Token->GetRawTokenName()[1] == 0;
 }
@@ -797,23 +812,23 @@ void FBaseParser::RequireIdentifier(const char* Match, const char* Tag)
 {
 	if(!MatchIdentifier(Match))
 	{
-		FParserError::Throwf(TEXT("Missing '%s' in %s"), Match, Tag);
+		SetError(Re::String{"Missing "} + Match + " in " + Tag + " : at " + GetLocation());
 	}
 }
 
-void FBaseParser::RequireSymbol(const char Match, const char* Tag)
+void FBaseParser::RequireSymbol(char Match, const char* Tag)
 {
 	if(!MatchSymbol(Match))
 	{
-		FParserError::Throwf(TEXT("Missing %c in %s"), Match, Tag);
+		SetError(Re::String{"Missing "} + Match + " in " + Tag + " : at " + GetLocation());
 	}
 }
 
-void FBaseParser::RequireSymbol(const char Match, Re::Func<Re::String()> TagGetter)
+void FBaseParser::RequireSymbol(char Match, const Re::Func<Re::String()>& TagGetter)
 {
 	if(!MatchSymbol(Match))
 	{
-		FParserError::Throwf(TEXT("Missing %c in %s"), Match, *TagGetter());
+		SetError(Re::String{"Missing "} +  Match + " in " + TagGetter() + " : at " + GetLocation());
 	}
 }
 
@@ -821,7 +836,7 @@ void FBaseParser::RequireConstInt(const char* Match, const char* Tag)
 {
 	if(!MatchConstInt(Match))
 	{
-		FParserError::Throwf(TEXT("Missing integer '%s' in %s"), Match, Tag);
+		SetError(Re::String{"Missing integer '"} + Match + "' in " + Tag + " : at " + GetLocation());
 	}
 }
 
@@ -829,6 +844,7 @@ void FBaseParser::RequireAnyConstInt(const char* Tag)
 {
 	if(!MatchAnyConstInt())
 	{
-		FParserError::Throwf("Missing integer in %s'", Tag);
+
+		SetError(Re::String{"Missing integer in "} + Tag + " : at " + GetLocation());
 	}
 }

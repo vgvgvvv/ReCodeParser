@@ -1,12 +1,11 @@
 #pragma once
 #include "ReCppCommon.h"
 
-class FCppToken;
+class Token;
 
 class FBaseParser
 {
 public:
-	using namespace Re;
 
 	virtual ~FBaseParser() = default;
 
@@ -19,6 +18,9 @@ public:
 	char PeekChar();
 	char GetLeadingChar();
 	void UngetChar();
+
+	void SetError(const Re::String& str);
+	bool GetError(Re::String& str);
 
 	/**
 	 * Tests if a character is an end-of-line character.
@@ -48,17 +50,17 @@ public:
 	 * \param bNoConsts ignore Const
 	 * \return 
 	 */
-	Re::SharedPtr<FCppToken> GetToken(bool bNoConsts = false);
+	Re::SharedPtr<Token> GetToken(bool bNoConsts = false);
 
-	Re::Vector<Re::SharedPtr<FCppToken>> GetTokensUntil(Re::Func<bool(FCppToken&)> Condition, bool bNoConst = false, const Re::String& DebugMessage = "");
-	Re::Vector<Re::SharedPtr<FCppToken>> GetTokenUntilMatch(const char Match, bool bNoConst = false, const Re::String& DebugMessage = "");
-	Re::Vector<Re::SharedPtr<FCppToken>> GetTokenUntilMatch(const char* Match, bool bNoConst = false, const Re::String& DebugMessage = "");
-	Re::Vector<Re::SharedPtr<FCppToken>> GetTokensUntilPairMatch(const char Left, const char Right, const Re::String& DebugMessage = "");
+	Re::Vector<Re::SharedPtr<Token>> GetTokensUntil(Re::Func<bool(Token&)> Condition, bool bNoConst = false, const Re::String& DebugMessage = "");
+	Re::Vector<Re::SharedPtr<Token>> GetTokenUntilMatch(const char Match, bool bNoConst = false, const Re::String& DebugMessage = "");
+	Re::Vector<Re::SharedPtr<Token>> GetTokenUntilMatch(const char* Match, bool bNoConst = false, const Re::String& DebugMessage = "");
+	Re::Vector<Re::SharedPtr<Token>> GetTokensUntilPairMatch(const char Left, const char Right, const Re::String& DebugMessage = "");
 
-	void UngetToken(const Re::SharedPtr<FCppToken>& Token);
+	void UngetToken(const Re::SharedPtr<Token>& Token);
 
-	Re::SharedPtr<FCppToken>  GetIdentifier(bool bNoConsts = false);
-	Re::SharedPtr<FCppToken> GetSymbol();
+	Re::SharedPtr<Token>  GetIdentifier(bool bNoConsts = false);
+	Re::SharedPtr<Token> GetSymbol();
 
 	// TODO
 	bool GetConstInt(int32& Result, const char* Tag = NULL);
@@ -71,14 +73,14 @@ public:
 	bool PeekIdentifier(const char* Match);
 	bool MatchSymbol(const char Match);
 	bool MatchSymbol(const char* Match);
-	bool MatchToken(Re::Func<bool(const FCppToken&)> Condition);
+	bool MatchToken(Re::Func<bool(const Token&)> Condition);
 	bool MatchSemi();
 	bool PeekSymbol(const char Match);
 
 	// Requiring predefined text.
 	void RequireIdentifier(const char* Match, const char* Tag);
-	void RequireSymbol(const char Match, const char* Tag);
-	void RequireSymbol(const char Match, Re::Func<Re::String()> TagGetter);
+	void RequireSymbol(char Match, const char* Tag);
+	void RequireSymbol(char Match, const Re::Func<Re::String()>& TagGetter);
 	void RequireConstInt(const char* Match, const char* Tag);
 	void RequireAnyConstInt(const char* Tag);
 	void RequireSemi();
@@ -110,5 +112,6 @@ protected:
 	int32 LinesParsed = 0;
 
 	Re::String FileName;
-	
+
+	Re::Stack<Re::String> Errors;
 };

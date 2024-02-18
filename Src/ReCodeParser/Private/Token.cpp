@@ -1,51 +1,51 @@
 #include "Token.h"
 
-void FCppToken::InitToken()
+void Token::InitToken()
 {
-	TokenType = ECppTokenType::None;
+	TokenType = ETokenType::None;
 	StartPos = 0;
 	StartLine = 0;
 	*Identifier = 0;
 	std::memset(String, 0, sizeof(String));
 }
 
-Re::String FCppToken::GetTokenName() const
+Re::String Token::GetTokenName() const
 {
-	if(TokenType == ECppTokenType::Const)
+	if(TokenType == ETokenType::Const)
 	{
 		return GetConstantValue();		
 	}else
 	{
-		return Re::String(Identifier);
+		return Re::String{Identifier};
 	}
 }
 
-const char* FCppToken::GetRawTokenName() const
+const char* Token::GetRawTokenName() const
 {
 	return Identifier;
 }
 
-Re::String FCppToken::GetConstantValue() const
+Re::String Token::GetConstantValue() const
 {
-	if(TokenType == ECppTokenType::Const)
+	if(TokenType == ETokenType::Const)
 	{
 		switch (ConstType)
 		{
-		case ECppTokenConstType::Byte: 
-			return FString::Printf(TEXT("%u"), Byte);
-		case ECppTokenConstType::Int: 
-			return FString::Printf(TEXT("%d"), Int);
-		case ECppTokenConstType::Int64:
-			return FString::Printf(TEXT("%" INT64_FMT), Int64);
-		case ECppTokenConstType::Bool: 
-			return FString::Printf(TEXT("%s"), NativeBool ? TEXT("true") : TEXT("false"));
-		case ECppTokenConstType::Float: 
-			return FString::Printf(TEXT("%f"), Float);
-		case ECppTokenConstType::Double: 
-			return FString::Printf(TEXT("%f"), Double);
-		case ECppTokenConstType::String: 
-			return FString::Printf(TEXT("\"%s\""), String);
-		case ECppTokenConstType::Nullptr:
+		case ETokenConstType::Byte:
+			return std::to_string(Byte);
+		case ETokenConstType::Int:
+			return std::to_string(Int);
+		case ETokenConstType::Int64:
+			return std::to_string(Int64);
+		case ETokenConstType::Bool:
+			return NativeBool ? "true" : "false";
+		case ETokenConstType::Float:
+			return std::to_string(Float);
+		case ETokenConstType::Double:
+			return std::to_string(Double);
+		case ETokenConstType::String:
+			return Re::String("\"") + String + "\"";
+		case ETokenConstType::Nullptr:
 			return "nullptr";
 		default: 
 			return "InvalidTypeForToken";
