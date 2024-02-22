@@ -4,6 +4,9 @@
 
 namespace ReParser
 {
+    DEFINE_CLASS_WITHOUT_NEW(IParsableFile)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(ICodeFile, IParsableFile)
+
 	void BaseParser::InitParserSource(const char* SourceBuffer)
 	{
 		InitParserSource("UNKNOWN", SourceBuffer);
@@ -71,7 +74,7 @@ namespace ReParser
 		else if (!bLiteral)
 		{
 			const char NextChar = PeekChar();
-			if (c == '/' && NextChar == '*')
+			if (IsBeginComment(c))
 			{
 				if (!bInsideComment)
 				{
@@ -91,7 +94,7 @@ namespace ReParser
 
 				goto Loop;
 			}
-			else if (c == '*' && NextChar == '/')
+			else if (IsEndComment(c))
 			{
 				if (!bInsideComment)
 				{
@@ -149,7 +152,7 @@ namespace ReParser
 				}
 			} while (IsWhitespace(c));
 
-			if (c != '/' || PeekChar() != '/')
+			if (!IsLineComment(c))
 			{
 				return c;
 			}
@@ -236,7 +239,7 @@ namespace ReParser
 			return nullptr;
 		}
 
-		auto token = RE_MAKE_SHARED(Token)();
+		auto token = Re::MakeShared<Token>();
 		token->StartPos = PrevPos;
 		token->StartLine = PrevLine;
 
@@ -594,7 +597,13 @@ namespace ReParser
 		return Tokens;
 	}
 
-	void BaseParser::UngetToken(const Re::SharedPtr<Token>& Token)
+    void BaseParser::UngetToken(const Token& Token)
+    {
+        InputPos = Token.StartPos;
+        InputLine = Token.StartLine;
+    }
+
+    void BaseParser::UngetToken(const Re::SharedPtr<Token>& Token)
 	{
 		InputPos = Token->StartPos;
 		InputLine = Token->StartLine;
@@ -903,13 +912,19 @@ namespace ReParser
 	{
 		if(!file)
 		{
-			RE_ERROR("target file to parse is null !!")
+            RE_ERROR("target file to parse is null !!");
 			return;
 		}
 		PreParserProcess(file);
 
+        Re::String errorMsg;
 		while (true)
 		{
+            if(GetError(errorMsg))
+            {
+                RE_ERROR_F("exception raised !! please check your code file !! %s", errorMsg.c_str());
+                break;
+            }
 			auto token = GetToken();
 			if(!token)
 			{

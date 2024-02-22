@@ -1,4 +1,5 @@
 #pragma once
+#include "ReClassInfo.h"
 #include "ReCppCommon.h"
 #include "Token.h"
 
@@ -7,15 +8,17 @@ namespace ReParser
 	class Token;
 	class BaseParser;
 
-	class IFile
+	class IParsableFile
 	{
+        DECLARE_CLASS(IParsableFile)
 	public:
-		virtual ~IFile() = default;
+		virtual ~IParsableFile() = default;
 		virtual const Re::String& GetFilePath() const = 0;
 	};
 
-	class ICodeFile : public IFile
+	class ICodeFile : public IParsableFile
 	{
+        DECLARE_DERIVED_CLASS(ICodeFile, IParsableFile)
 	public:
 		virtual const Re::String& GetContent() const = 0;
 		virtual void OnNextToken(BaseParser& parser, const Token& token) { }
@@ -62,8 +65,32 @@ namespace ReParser
 		 */
 		static bool IsWhitespace(char c);
 
+	protected:
+
 		/** Clears out the stored comment. */
 		void ClearComment();
+
+	    virtual bool IsBeginComment(char currentChar)
+	    {
+	        auto nextChar = PeekChar();
+	        if (currentChar == '/' && nextChar == '*') return true;
+
+	        return false;
+	    }
+
+	    virtual bool IsEndComment(char currentChar)
+	    {
+	        auto nextChar = PeekChar();
+	        if (currentChar == '*' && nextChar == '/') return true;
+
+	        return false;
+	    }
+
+	    virtual bool IsLineComment(char currentChar)
+	    {
+	        if (currentChar == '/' && PeekChar() == '/') return true;
+	        return false;
+	    }
 
 	public:
 
@@ -79,6 +106,7 @@ namespace ReParser
 		Re::Vector<Re::SharedPtr<Token>> GetTokenUntilMatch(const char* Match, bool bNoConst = false, const Re::String& DebugMessage = "");
 		Re::Vector<Re::SharedPtr<Token>> GetTokensUntilPairMatch(const char Left, const char Right, const Re::String& DebugMessage = "");
 
+        void UngetToken(const Token& Token);
 		void UngetToken(const Re::SharedPtr<Token>& Token);
 
 		Re::SharedPtr<Token>  GetIdentifier(bool bNoConsts = false);
@@ -160,12 +188,12 @@ namespace ReParser
 			}
 		}
 
-		virtual bool CompileDeclaration(Token token)
+	    bool CompileDeclaration(const Token& token) override
 		{
 			return CompileDeclaration(nullptr, token);
 		}
 
-		virtual bool CompileDeclaration(ICodeFile* file, Token token)
+		virtual bool CompileDeclaration(ICodeFile* file, const Token& token)
 		{
 			return true;
 		}
