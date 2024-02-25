@@ -2,9 +2,9 @@
 
 
 #include "ReClassInfo.h"
-#include "Private/Internal/BaseParser.h"
+#include "Internal/BaseParser.h"
 
-namespace ReParser
+namespace ReParser::Ini
 {
 	template<typename T>
 	struct Single
@@ -137,56 +137,56 @@ namespace ReParser
 		Re::Map<Re::String, IniSectionItemPtr> Properties;
 	};
 
-class IniFile : public ICodeFile
-{
-	DECLARE_DERIVED_CLASS(IniFile, ICodeFile)
-public:
-	explicit IniFile(const Re::String& filePath)
-		: FilePath(filePath)
+	class IniFile : public ICodeFile
 	{
-		if(!std::filesystem::exists(filePath))
+		DECLARE_DERIVED_CLASS(IniFile, ICodeFile)
+	public:
+		explicit IniFile(const Re::String& filePath)
+			: FilePath(filePath)
 		{
-			RE_ERROR_F("read ini file %s failed !!", filePath.c_str());
-			return;
+			if(!std::filesystem::exists(filePath))
+			{
+				RE_ERROR_F("read ini file %s failed !!", filePath.c_str());
+				return;
+			}
+			std::ifstream t(filePath);
+			std::stringstream buffer;
+			buffer << t.rdbuf();
+			Content = buffer.str();
 		}
-		std::ifstream t(filePath);
-		std::stringstream buffer;
-		buffer << t.rdbuf();
-		Content = buffer.str();
-	}
-public:
+	public:
 
-	 static IniFilePtr Parse(const Re::String& filePath);
+		 static IniFilePtr Parse(const Re::String& filePath);
 
-	 void OnNextToken(BaseParser& parser, const Token& token) override { }
+		 void OnNextToken(BaseParser& parser, const Token& token) override { }
 
-	 IniSection* operator[] (const Re::String& sectionName) const
-	 {
-		 auto it = Sections.find(sectionName);
-		 if(it != Sections.end())
+		 IniSection* operator[] (const Re::String& sectionName) const
 		 {
-			 return Re::UniquePtrGet(it->second);
+			 auto it = Sections.find(sectionName);
+			 if(it != Sections.end())
+			 {
+				 return Re::UniquePtrGet(it->second);
+			 }
+			 return nullptr;
 		 }
-		 return nullptr;
-	 }
 
-	 bool AddSection(const Re::String& name, IniSectionPtr&& Section)
-	 {
-		 if(Sections.find(name) != Sections.end())
+		 bool AddSection(const Re::String& name, IniSectionPtr&& Section)
 		 {
-			 return false;
+			 if(Sections.find(name) != Sections.end())
+			 {
+				 return false;
+			 }
+			 Sections.emplace(name, RE_MOVE(Section));
+			 return true;
 		 }
-		 Sections.emplace(name, RE_MOVE(Section));
-		 return true;
-	 }
 
-		const Re::String& GetFilePath() const override { return FilePath; }
-		const Re::String& GetContent() const override { return Content; }
+			const Re::String& GetFilePath() const override { return FilePath; }
+			const Re::String& GetContent() const override { return Content; }
 
-private:
-	Re::String FilePath;
-	Re::String Content;
-	Re::Map<Re::String, Re::UniquePtr<IniSection>> Sections;
-};
+	private:
+		Re::String FilePath;
+		Re::String Content;
+		Re::Map<Re::String, Re::UniquePtr<IniSection>> Sections;
+	};
 
 }

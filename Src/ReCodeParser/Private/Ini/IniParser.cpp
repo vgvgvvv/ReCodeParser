@@ -2,7 +2,7 @@
 
 #include <ReClassMisc.h>
 
-namespace ReParser
+namespace ReParser::Ini
 {
     DEFINE_CLASS_WITHOUT_NEW(IniSectionItem)
     DEFINE_DERIVED_CLASS_WITHOUT_NEW(IniSectionStringItem, IniSectionItem)

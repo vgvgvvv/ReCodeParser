@@ -188,7 +188,7 @@ namespace ReParser
 			}
 		}
 
-	    bool CompileDeclaration(const Token& token) override
+	    bool CompileDeclaration(const Token& token) final
 		{
 			return CompileDeclaration(nullptr, token);
 		}
