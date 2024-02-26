@@ -4,7 +4,7 @@
 namespace ReParser::AST
 {
     DEFINE_CLASS_WITHOUT_NEW(ASTNode)
-
+    DEFINE_CLASS_WITHOUT_NEW(ASTNodeParser)
     DEFINE_CLASS_WITHOUT_NEW(ASTParser)
 
     bool Rule::Parse(ASTNodeParser& parser, ICodeFile* file, ASTParser& context, const Token& token)

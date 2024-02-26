@@ -932,7 +932,7 @@ namespace ReParser
 			}
 			file->OnNextToken(*this, *token);
 
-			CompileDeclaration(*token);
+			CompileDeclaration(file, *token);
 		}
 
 		PostParserProcess(file);

@@ -1,5 +1,4 @@
 #include "IniParser.h"
-
 #include <ReClassMisc.h>
 
 namespace ReParser::Ini
@@ -14,22 +13,22 @@ namespace ReParser::Ini
 
     IniSectionItemPtr IniSectionItem::CreateString(const Re::String& content)
     {
-        return Re::MakeUnique<IniSectionStringItem>(content);
+        return Re::MakeShared<IniSectionStringItem>(content);
     }
 
     IniSectionItemPtr IniSectionItem::CreateSingle()
     {
-        return Re::MakeUnique<IniSectionSingleItem>();
+        return Re::MakeShared<IniSectionSingleItem>();
     }
 
     IniSectionItemPtr IniSectionItem::CreateList()
     {
-        return Re::MakeUnique<IniSectionListItem>();
+        return Re::MakeShared<IniSectionListItem>();
     }
 
     IniSectionItemPtr IniSectionItem::CreateMap()
     {
-        return Re::MakeUnique<IniSectionMapItem>();
+        return Re::MakeShared<IniSectionMapItem>();
     }
 
     Re::String* IniSectionStringItem::GetString()
@@ -41,7 +40,7 @@ namespace ReParser::Ini
     {
         if(auto single = GetSingle())
         {
-            if(auto ptr = Re::UniquePtrGet(single->Value))
+            if(auto ptr = Re::SharedPtrGet(single->Value))
             {
                 return ptr->GetString();
             }
@@ -58,7 +57,7 @@ namespace ReParser::Ini
     {
         if (auto single = GetSingle())
         {
-            if (auto ptr = Re::UniquePtrGet(single->Value))
+            if (auto ptr = Re::SharedPtrGet(single->Value))
             {
                 return ptr->GetList();
             }
@@ -70,7 +69,7 @@ namespace ReParser::Ini
     {
         if (auto single = GetSingle())
         {
-            if (auto ptr = Re::UniquePtrGet(single->Value))
+            if (auto ptr = Re::SharedPtrGet(single->Value))
             {
                 return ptr->GetMap();
             }
@@ -255,14 +254,14 @@ namespace ReParser::Ini
             nameBuilder += nameToken->GetTokenName();
         }
 
-        auto newSection = Re::MakeUnique<IniSection>(nameBuilder);
-        if(fileScope.File->AddSection(nameBuilder, RE_MOVE(newSection)))
+        auto newSection = Re::MakeShared<IniSection>(nameBuilder);
+        if(!fileScope.File->AddSection(nameBuilder, newSection))
         {
             SetError(RE_FORMAT("ini section %s has added !!", nameBuilder.c_str()));
             return false;
         }
 
-        ScopeStack.push(Re::MakeShared<IniSectionScope>(Re::UniquePtrGet(newSection)));
+        ScopeStack.push(Re::MakeShared<IniSectionScope>(Re::SharedPtrGet(newSection)));
 
         return true;
     }
@@ -279,28 +278,29 @@ namespace ReParser::Ini
 
         bool isList = token.Matches('+');
         Re::String sectionNameBuilder;
-        const Token* sectionItemNameToken = isList ? Re::SharedPtrGet(GetToken(true)) : &token;
-        if(!sectionItemNameToken)
+        const Token* sectionItemNameTokenPtr = isList ? Re::SharedPtrGet(GetToken(true)) : &token;
+        if(!sectionItemNameTokenPtr)
         {
             SetError(RE_FORMAT("unexpected end of file %s", GetFileLocation(&file).c_str()));
             return false;
         }
 
-        while(!sectionItemNameToken->Matches('='))
+        Token currentNameToken = *sectionItemNameTokenPtr;
+        while(!currentNameToken.Matches('='))
         {
-            if(sectionItemNameToken->GetTokenType() == ETokenType::Const)
+            if(currentNameToken.GetTokenType() == ETokenType::Const)
             {
                 SetError(RE_FORMAT("section item name cannot be const value !! %s", GetFileLocation(&file).c_str()));
                 return false;
             }
-            sectionNameBuilder += sectionItemNameToken->GetTokenName();
+            sectionNameBuilder += currentNameToken.GetTokenName();
             auto nextToken = GetToken(true);
-            sectionItemNameToken = Re::SharedPtrGet(nextToken);
-            if(!sectionItemNameToken)
+            if(!nextToken)
             {
                 SetError(RE_FORMAT("unexpected end of file %s", GetFileLocation(&file).c_str()));
                 return false;
             }
+            currentNameToken = *nextToken;
         }
 
         IniSectionItem* item = nullptr;
@@ -310,7 +310,7 @@ namespace ReParser::Ini
             if(!item)
             {
                 auto newItem = IniSectionItem::CreateList();
-                item = Re::UniquePtrGet(newItem);
+                item = Re::SharedPtrGet(newItem);
                 sectionScope.Section->AddItem(sectionNameBuilder, RE_MOVE(newItem));
             }
         }
@@ -323,7 +323,7 @@ namespace ReParser::Ini
                 return false;
             }
             auto newItem = IniSectionItem::CreateSingle();
-            item = Re::UniquePtrGet(newItem);
+            item = Re::SharedPtrGet(newItem);
             sectionScope.Section->AddItem(sectionNameBuilder, RE_MOVE(newItem));
         }
 
@@ -341,7 +341,7 @@ namespace ReParser::Ini
 
         if(item->GetType() == IniSectionItemType::Single)
         {
-            RE_ASSERT(item->GetSingle() && item->GetSingle()->Value);
+            RE_ASSERT(item->GetSingle());
             item->GetSingle()->Value = ParseValue(file, token);
             ScopeStack.pop();
             return true;
@@ -395,7 +395,7 @@ namespace ReParser::Ini
         {
             UngetToken(token);
             newItem = IniSectionItem::CreateMap();
-            ScopeStack.push(Re::MakeShared<IniSectionItemScope>(Re::UniquePtrGet(newItem)));
+            ScopeStack.push(Re::MakeShared<IniSectionItemScope>(Re::SharedPtrGet(newItem)));
             if(!ParseMap(file))
             {
                 return nullptr;
@@ -405,7 +405,7 @@ namespace ReParser::Ini
         {
             UngetToken(token);
             newItem = IniSectionItem::CreateList();
-            ScopeStack.push(Re::MakeShared<IniSectionItemScope>(Re::UniquePtrGet(newItem)));
+            ScopeStack.push(Re::MakeShared<IniSectionItemScope>(Re::SharedPtrGet(newItem)));
             if(!ParseList(file))
             {
                 return nullptr;

@@ -2,6 +2,8 @@
 set(TargetName ReCodeParser_Test)
 ReMake_AddTarget(
     TARGET_NAME ${TargetName}
-    MODE SHARED
+    MODE EXE
     INC "Public"
+    LIB "ReCodeParser"
+        "ReCppCommon"
 )

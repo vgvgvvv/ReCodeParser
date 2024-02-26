@@ -1,8 +1,8 @@
 #pragma once
 
-
+#include "ReCodeParserDefine.h"
 #include "ReClassInfo.h"
-#include "Internal/BaseParser.h"
+#include "Private/Internal/BaseParser.h"
 
 namespace ReParser::Ini
 {
@@ -17,9 +17,9 @@ namespace ReParser::Ini
 	class IniFile;
 	using IniFilePtr = Re::SharedPtr<IniFile>;
 	class IniSectionItem;
-	using IniSectionItemPtr = Re::UniquePtr<IniSectionItem>;
+	using IniSectionItemPtr = Re::SharedPtr<IniSectionItem>;
 	class IniSection;
-	using IniSectionPtr = Re::UniquePtr<IniSection>;
+	using IniSectionPtr = Re::SharedPtr<IniSection>;
 
 	enum class IniSectionItemType
 	{
@@ -29,7 +29,7 @@ namespace ReParser::Ini
 		Map
 	};
 
-	class IniSectionItem
+	class RECODEPARSER_API IniSectionItem
 	{
 		DECLARE_CLASS(IniSectionItem)
 	public:
@@ -52,7 +52,7 @@ namespace ReParser::Ini
 
 	};
 
-	class IniSectionStringItem : public IniSectionItem
+	class RECODEPARSER_API IniSectionStringItem : public IniSectionItem
 	{
 		DECLARE_DERIVED_CLASS(IniSectionStringItem, IniSectionItem)
 	public:
@@ -68,7 +68,7 @@ namespace ReParser::Ini
 		Re::String Str{};
 	};
 
-	class IniSectionSingleItem : public IniSectionItem
+	class RECODEPARSER_API IniSectionSingleItem : public IniSectionItem
 	{
 		DECLARE_DERIVED_CLASS(IniSectionSingleItem, IniSectionItem)
 	public:
@@ -82,7 +82,7 @@ namespace ReParser::Ini
 		Single<IniSectionItemPtr> Item{};
 	};
 
-	class IniSectionListItem : public IniSectionItem
+	class RECODEPARSER_API IniSectionListItem : public IniSectionItem
 	{
 		DECLARE_DERIVED_CLASS(IniSectionListItem, IniSectionItem)
 	public:
@@ -92,10 +92,10 @@ namespace ReParser::Ini
 		IniSectionItemType GetType() const override { return IniSectionItemType::List; }
 		Re::Vector<IniSectionItemPtr>* GetList() override;
 	private:
-		Re::Vector<IniSectionItemPtr> List{};
+		Re::Vector<IniSectionItemPtr> List;
 	};
 
-	class IniSectionMapItem : public IniSectionItem
+	class RECODEPARSER_API IniSectionMapItem : public IniSectionItem
 	{
 		DECLARE_DERIVED_CLASS(IniSectionMapItem, IniSectionItem)
 	public:
@@ -105,7 +105,7 @@ namespace ReParser::Ini
 		Re::Map<Re::String, IniSectionItemPtr> Map{};
 	};
 
-	class IniSection
+	class RECODEPARSER_API IniSection
 	{
 	public:
 		explicit IniSection(Re::String name) : Name(std::move(name)) {}
@@ -127,7 +127,7 @@ namespace ReParser::Ini
 			auto it = Properties.find(itemName);
 			if (it != Properties.end())
 			{
-				return Re::UniquePtrGet(it->second);
+				return Re::SharedPtrGet(it->second);
 			}
 			return nullptr;
 		}
@@ -137,7 +137,7 @@ namespace ReParser::Ini
 		Re::Map<Re::String, IniSectionItemPtr> Properties;
 	};
 
-	class IniFile : public ICodeFile
+	class RECODEPARSER_API IniFile : public ICodeFile
 	{
 		DECLARE_DERIVED_CLASS(IniFile, ICodeFile)
 	public:
@@ -165,18 +165,18 @@ namespace ReParser::Ini
 			 auto it = Sections.find(sectionName);
 			 if(it != Sections.end())
 			 {
-				 return Re::UniquePtrGet(it->second);
+				 return Re::SharedPtrGet(it->second);
 			 }
 			 return nullptr;
 		 }
 
-		 bool AddSection(const Re::String& name, IniSectionPtr&& Section)
+		 bool AddSection(const Re::String& name, const IniSectionPtr& Section)
 		 {
 			 if(Sections.find(name) != Sections.end())
 			 {
 				 return false;
 			 }
-			 Sections.emplace(name, RE_MOVE(Section));
+			 Sections.insert(RE_MAKE_PAIR(name, Section));
 			 return true;
 		 }
 
@@ -186,7 +186,7 @@ namespace ReParser::Ini
 	private:
 		Re::String FilePath;
 		Re::String Content;
-		Re::Map<Re::String, Re::UniquePtr<IniSection>> Sections;
+		Re::Map<Re::String, Re::SharedPtr<IniSection>> Sections;
 	};
 
 }
