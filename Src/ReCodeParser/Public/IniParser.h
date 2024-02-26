@@ -123,13 +123,13 @@ namespace ReParser::Ini
 
 		const Re::String& GetName() const { return Name; }
 
-		bool AddItem(const Re::String& itemName, IniSectionItemPtr ptr)
+		bool AddItem(const Re::String& itemName, const IniSectionItemPtr& ptr)
 		{
 			if(Properties.find(itemName) != Properties.end())
 			{
 				return false;
 			}
-			Properties.emplace(itemName, RE_MOVE(ptr));
+			Properties.insert(RE_MAKE_PAIR(itemName, ptr));
 			return true;
 		}
 
@@ -196,6 +196,11 @@ namespace ReParser::Ini
 
 		const Re::String& GetFilePath() const override { return FilePath; }
 		const Re::String& GetContent() const override { return Content; }
+
+		const Re::Map<Re::String, Re::SharedPtr<IniSection>>& GetSections() const
+		{
+		return Sections;
+		}
 
 		Re::String ToString() const;
 

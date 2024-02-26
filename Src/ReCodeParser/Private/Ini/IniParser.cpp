@@ -241,7 +241,7 @@ namespace ReParser::Ini
             SetError(RE_FORMAT("current code file is not a ini file !! %s", file->GetFilePath().c_str()));
             return;
         }
-        ScopeStack.push(RE_MOVE(Re::MakeShared<IniFileScope>(iniFile)));
+        ScopeStack.push(Re::MakeShared<IniFileScope>(iniFile));
     }
 
     void IniParser::PostParserProcess(ICodeFile* file)
@@ -256,8 +256,12 @@ namespace ReParser::Ini
             RE_LOG_F("parse %s failed !! reason: %s", file->GetFilePath().c_str(), err.c_str())
             return;
         }
-        RE_ASSERT(ScopeStack.size() == 2 && ScopeStack.top() && ScopeStack.top()->GetType() == IniScopeType::Section);
-        ScopeStack.pop();
+
+        if(ScopeStack.size() == 2)
+        {
+            RE_ASSERT(ScopeStack.size() == 2 && ScopeStack.top() && ScopeStack.top()->GetType() == IniScopeType::Section);
+            ScopeStack.pop();
+        }
 
         RE_ASSERT(ScopeStack.size() == 1 && ScopeStack.top() && ScopeStack.top()->GetType() == IniScopeType::File);
         ScopeStack.pop();
@@ -390,7 +394,7 @@ namespace ReParser::Ini
             {
                 auto newItem = IniSectionItem::CreateList();
                 item = Re::SharedPtrGet(newItem);
-                sectionScope.Section->AddItem(sectionNameBuilder, RE_MOVE(newItem));
+                sectionScope.Section->AddItem(sectionNameBuilder, newItem);
             }
         }
         else
@@ -403,7 +407,7 @@ namespace ReParser::Ini
             }
             auto newItem = IniSectionItem::CreateSingle();
             item = Re::SharedPtrGet(newItem);
-            sectionScope.Section->AddItem(sectionNameBuilder, RE_MOVE(newItem));
+            sectionScope.Section->AddItem(sectionNameBuilder, newItem);
         }
 
         ScopeStack.push(Re::MakeShared<IniSectionItemScope>(item));
@@ -433,7 +437,7 @@ namespace ReParser::Ini
             {
                 SetError(RE_FORMAT("parse ini section item failed !! %s", GetFileLocation(&file).c_str()));
             }
-            item->GetList()->emplace_back(RE_MOVE(result));
+            item->GetList()->push_back(result);
             ScopeStack.pop();
             return true;
         }
@@ -453,7 +457,7 @@ namespace ReParser::Ini
             {
                 SetError(RE_FORMAT("parse ini section item failed !! %s", GetFileLocation(&file).c_str()));
             }
-            item->GetMap()->emplace(name, RE_MOVE(result));
+            item->GetMap()->insert(RE_MAKE_PAIR(name, result));
             ScopeStack.pop();
 
             return true;
@@ -602,7 +606,7 @@ namespace ReParser::Ini
                 SetError(RE_FORMAT("repeat key in map item !! %s", GetFileLocation(&file).c_str()));
                 return false;
             }
-            map->emplace(mapItemNameBuilder, RE_MOVE(subItem));
+            map->insert(RE_MAKE_PAIR(mapItemNameBuilder, subItem));
         }
 
         return true;
