@@ -5,7 +5,9 @@
 
 int main()
 {
-	auto iniFile = ReParser::Ini::IniFile::Parse("D:\\MyProjects\\TestProject\\TestCustomEngine\\Assets\\StreamingAssets\\IniConfig\\DefaultSetting.ini");
+	auto path = std::filesystem::path{__FILE__}.parent_path() / "Test.ini";
+	auto iniFile = ReParser::Ini::IniFile::Parse(path.string());
 	RE_ASSERT(iniFile);
+	RE_LOG(iniFile->ToString())
 	return 0;
 }

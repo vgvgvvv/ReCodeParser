@@ -842,7 +842,7 @@ namespace ReParser
 
 	Re::String BaseParser::GetLocation() const
 	{
-		return std::to_string(InputLen) + ":" + std::to_string(InputPos);
+		return std::to_string(InputLine) + ":" + std::to_string(InputPos);
 	}
 
 	bool BaseParser::PeekSymbol(char Match)

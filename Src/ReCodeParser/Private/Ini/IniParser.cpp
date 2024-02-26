@@ -77,14 +77,59 @@ namespace ReParser::Ini
         return nullptr;
     }
 
+    Re::String IniSectionSingleItem::ToString() const
+    {
+        if(!Item.Value)
+        {
+            return "(null)";
+        }
+        return Item.Value->ToString();
+    }
+
     Re::Vector<IniSectionItemPtr>* IniSectionListItem::GetList()
     {
         return &List;
     }
 
+    Re::String IniSectionListItem::ToString() const
+    {
+        Re::String ListBuilder = "[";
+        bool isFirst = true;
+        for (auto& item : List)
+        {
+            if(!isFirst)
+            {
+                ListBuilder += ", ";
+            }
+            ListBuilder += item->ToString();
+            isFirst = false;
+        }
+        ListBuilder += "]";
+        return ListBuilder;
+    }
+
     Re::Map<Re::String, IniSectionItemPtr>* IniSectionMapItem::GetMap()
     {
         return &Map;
+    }
+
+    Re::String IniSectionMapItem::ToString() const
+    {
+        Re::String MapBuilder = "(";
+        bool isFirst = true;
+        for (auto& pair : Map)
+        {
+            if(!isFirst)
+            {
+                MapBuilder += ", ";
+            }
+            MapBuilder += pair.first;
+            MapBuilder += "=";
+            MapBuilder += pair.second->ToString();
+            isFirst = false;
+        }
+        MapBuilder += ")";
+        return MapBuilder;
     }
 
     class IniParser : public BaseParserWithFile
@@ -155,6 +200,30 @@ namespace ReParser::Ini
         IniParser parser;
         parser.InitParserSource(result->GetFilePath(), result->GetContent().c_str());
         parser.Parse(Re::SharedPtrGet(result));
+        return result;
+    }
+
+    Re::String IniFile::ToString() const
+    {
+        Re::String result;
+
+        for (auto& sectionPair : Sections)
+        {
+            auto& name = sectionPair.first;
+            auto& section = sectionPair.second;
+            result += RE_FORMAT("[%s]\n", name.c_str());
+            for (const auto & property : section->GetProperties())
+            {
+                Re::String PropertyBuilder;
+                PropertyBuilder += property.first;
+                PropertyBuilder += " -> ";
+                PropertyBuilder += property.second->ToString();
+                result += RE_FORMAT("\t%s\n", PropertyBuilder.c_str());
+            }
+
+            result += "\n";
+        }
+
         return result;
     }
 
@@ -278,14 +347,24 @@ namespace ReParser::Ini
 
         bool isList = token.Matches('+');
         Re::String sectionNameBuilder;
-        const Token* sectionItemNameTokenPtr = isList ? Re::SharedPtrGet(GetToken(true)) : &token;
-        if(!sectionItemNameTokenPtr)
+
+        Token currentNameToken;
+        if(isList)
         {
-            SetError(RE_FORMAT("unexpected end of file %s", GetFileLocation(&file).c_str()));
-            return false;
+            auto nextNameToken = GetToken(true);
+            const Token* sectionItemNameTokenPtr = Re::SharedPtrGet(nextNameToken);
+            if(!sectionItemNameTokenPtr)
+            {
+                SetError(RE_FORMAT("unexpected end of file %s", GetFileLocation(&file).c_str()));
+                return false;
+            }
+            currentNameToken = *sectionItemNameTokenPtr;
+        }
+        else
+        {
+            currentNameToken = token;
         }
 
-        Token currentNameToken = *sectionItemNameTokenPtr;
         while(!currentNameToken.Matches('='))
         {
             if(currentNameToken.GetTokenType() == ETokenType::Const)
@@ -390,6 +469,7 @@ namespace ReParser::Ini
 
     IniSectionItemPtr IniParser::ParseValue(ICodeFile& file, const Token& token)
     {
+        auto currentLine = InputLine;
         IniSectionItemPtr newItem;
         if(token.Matches('('))
         {
@@ -428,8 +508,12 @@ namespace ReParser::Ini
                     auto nextToken = GetToken(true);
                     if(!nextToken)
                     {
-                        SetError(RE_FORMAT("unexpected end of file %s", GetFileLocation(&file).c_str()));
-                        return nullptr;
+                       break;
+                    }
+                    if(InputLine != currentLine)
+                    {
+                        UngetToken(nextToken);
+                        break;
                     }
                     itemContentToken = *nextToken;
                     itemContentBuilder += itemContentToken.GetTokenName();

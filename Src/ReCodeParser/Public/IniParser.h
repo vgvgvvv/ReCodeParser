@@ -47,6 +47,8 @@ namespace ReParser::Ini
 		virtual Re::Vector<IniSectionItemPtr>* GetList() { return nullptr; }
 		virtual Re::Map<Re::String, IniSectionItemPtr>* GetMap() { return nullptr; }
 
+		virtual Re::String ToString() const { return ""; }
+
 	protected:
 
 
@@ -64,6 +66,8 @@ namespace ReParser::Ini
 
 		Re::String* GetString() override;
 
+		Re::String ToString() const override { return RE_FORMAT("%s", Str.c_str()); }
+
 	private:
 		Re::String Str{};
 	};
@@ -78,6 +82,9 @@ namespace ReParser::Ini
 		Single<IniSectionItemPtr>* GetSingle() override;
 		Re::Vector<IniSectionItemPtr>* GetList() override;
 		Re::Map<Re::String, IniSectionItemPtr>* GetMap() override;
+
+		Re::String ToString() const override;
+
 	private:
 		Single<IniSectionItemPtr> Item{};
 	};
@@ -91,6 +98,8 @@ namespace ReParser::Ini
 		}
 		IniSectionItemType GetType() const override { return IniSectionItemType::List; }
 		Re::Vector<IniSectionItemPtr>* GetList() override;
+
+		Re::String ToString() const override;
 	private:
 		Re::Vector<IniSectionItemPtr> List;
 	};
@@ -101,6 +110,8 @@ namespace ReParser::Ini
 	public:
 		IniSectionItemType GetType() const override { return IniSectionItemType::Map; }
 		Re::Map<Re::String, IniSectionItemPtr>* GetMap() override;
+
+		Re::String ToString() const override;
 	private:
 		Re::Map<Re::String, IniSectionItemPtr> Map{};
 	};
@@ -131,7 +142,10 @@ namespace ReParser::Ini
 			}
 			return nullptr;
 		}
-
+		Re::Map<Re::String, IniSectionItemPtr>& GetProperties()
+		{
+			return Properties;
+		}
 	private:
 		Re::String Name;
 		Re::Map<Re::String, IniSectionItemPtr> Properties;
@@ -180,8 +194,10 @@ namespace ReParser::Ini
 			 return true;
 		 }
 
-			const Re::String& GetFilePath() const override { return FilePath; }
-			const Re::String& GetContent() const override { return Content; }
+		const Re::String& GetFilePath() const override { return FilePath; }
+		const Re::String& GetContent() const override { return Content; }
+
+		Re::String ToString() const;
 
 	private:
 		Re::String FilePath;
