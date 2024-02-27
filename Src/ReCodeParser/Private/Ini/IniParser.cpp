@@ -501,14 +501,20 @@ namespace ReParser::Ini
             Re::String itemContentBuilder;
             if(token.GetTokenType() == ETokenType::Identifier || token.GetTokenType() == ETokenType::Symbol)
             {
-                itemContentBuilder += itemContentToken.GetTokenName();
-                while(!itemContentToken.Matches(')') && !itemContentToken.Matches(']') && !itemContentToken.Matches(','))
+                while(true)
                 {
+                    if(itemContentToken.Matches(')') || itemContentToken.Matches(']') || itemContentToken.Matches(','))
+                    {
+                        UngetToken(itemContentToken);
+                        break;
+                    }
                     if(itemContentToken.GetTokenType() != ETokenType::Identifier)
                     {
                         SetError(RE_FORMAT("invalid token type !! %s", GetFileLocation(&file).c_str()));
                         return nullptr;
                     }
+                    itemContentBuilder += itemContentToken.GetTokenName();
+
                     auto nextToken = GetToken(true);
                     if(!nextToken)
                     {
@@ -520,7 +526,6 @@ namespace ReParser::Ini
                         break;
                     }
                     itemContentToken = *nextToken;
-                    itemContentBuilder += itemContentToken.GetTokenName();
                 }
             }
             else if(token.GetTokenType() == ETokenType::Const)
