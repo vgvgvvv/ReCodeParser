@@ -43,10 +43,25 @@ namespace ReParser
 		// Token Identifier String
 		char Identifier[NameSize]{};
 
+		bool operator==(const Token& other) const
+		{
+			return TokenType == other.TokenType &&
+				ConstType == other.ConstType &&
+				Value.Byte == other.Value.Byte &&
+				Value.Int64 == other.Value.Int64 &&
+				Value.Int == other.Value.Int &&
+				Value.NativeBool == other.Value.NativeBool &&
+				Value.Float == other.Value.Float &&
+				Value.Byte == other.Value.Double &&
+				std::strcmp(Value.String, other.Value.String) == 0 &&
+				std::strcmp(Identifier, other.Identifier) == 0;
+
+		}
+
 	public:
 		// Storage for Const
 		ETokenConstType ConstType = ETokenConstType::None;
-		union
+		union ConstContent
 		{
 			// TOKEN_Const values.
 			uint8 Byte{};							// If CPT_Byte.
@@ -56,7 +71,7 @@ namespace ReParser
 			float Float;							// If CPT_Float.
 			double Double;							// If CPT_Double.
 			char String[MaxStringConstSize];		// If CPT_String
-		};
+		} Value;
 
 	public:
 
@@ -116,35 +131,35 @@ namespace ReParser
 		{
 			ConstType = ETokenConstType::Int64;
 			TokenType = ETokenType::Const;
-			Int64 = InInt64;
+			Value.Int64 = InInt64;
 		}
 
 		void SetConstInt(int32 InInt)
 		{
 			ConstType = ETokenConstType::Int;
 			TokenType = ETokenType::Const;
-			Int = InInt;
+			Value.Int = InInt;
 		}
 
 		void SetConstBool(bool InBool)
 		{
 			ConstType = ETokenConstType::Bool;
 			TokenType = ETokenType::Const;
-			NativeBool = InBool;
+			Value.NativeBool = InBool;
 		}
 
 		void SetConstFloat(float InFloat)
 		{
 			ConstType = ETokenConstType::Float;
 			TokenType = ETokenType::Const;
-			Float = InFloat;
+			Value.Float = InFloat;
 		}
 
 		void SetConstDouble(double InDouble)
 		{
 			ConstType = ETokenConstType::Double;
 			TokenType = ETokenType::Const;
-			Double = InDouble;
+			Value.Double = InDouble;
 		}
 
 		void SetConstString(const char* InString, int32 MaxLength = MaxStringConstSize)
@@ -152,16 +167,16 @@ namespace ReParser
 			RE_ASSERT(MaxLength > 0);
 			ConstType = ETokenConstType::String;
 			TokenType = ETokenType::Const;
-			if(InString != String)
+			if(InString != Value.String)
 			{
-				std::strncpy(String, InString, MaxLength);
+				std::strncpy(Value.String, InString, MaxLength);
 			}
 		}
 
 		void SetConstChar(char InChar)
 		{
-			String[0] = InChar;
-			String[1] = 0;
+			Value.String[0] = InChar;
+			Value.String[1] = 0;
 			TokenType = ETokenType::Const;
 		}
 
@@ -175,32 +190,32 @@ namespace ReParser
 			{
 				if(ConstType == ETokenConstType::Int64)
 				{
-					OutInt = static_cast<int32>(Int64);
+					OutInt = static_cast<int32>(Value.Int64);
 					return true;
 				}
 				else if(ConstType == ETokenConstType::Int)
 				{
-					OutInt = Int;
+					OutInt = Value.Int;
 					return true;
 				}
 				else if(ConstType == ETokenConstType::Byte)
 				{
-					OutInt = Byte;
+					OutInt = Value.Byte;
 					return true;
 				}
 				else if(ConstType == ETokenConstType::Float)
 				{
-					OutInt = static_cast<int32>(Float);
+					OutInt = static_cast<int32>(Value.Float);
 					return true;
 				}
 				else if(ConstType == ETokenConstType::Double)
 				{
-					OutInt = static_cast<int32>(Double);
+					OutInt = static_cast<int32>(Value.Double);
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Bool)
 				{
-					OutInt = NativeBool ? 1 : 0;
+					OutInt = Value.NativeBool ? 1 : 0;
 					return true;
 				}
 				else if(ConstType == ETokenConstType::Nullptr)
@@ -218,32 +233,32 @@ namespace ReParser
 			{
 				if (ConstType == ETokenConstType::Int64)
 				{
-					OutInt = Int64;
+					OutInt = Value.Int64;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Int)
 				{
-					OutInt = Int;
+					OutInt = Value.Int;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Byte)
 				{
-					OutInt = Byte;
+					OutInt = Value.Byte;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Float)
 				{
-					OutInt = static_cast<int64>(Float);
+					OutInt = static_cast<int64>(Value.Float);
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Double)
 				{
-					OutInt = static_cast<int64>(Double);
+					OutInt = static_cast<int64>(Value.Double);
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Bool)
 				{
-					OutInt = NativeBool ? 1 : 0;
+					OutInt = Value.NativeBool ? 1 : 0;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Nullptr)
@@ -261,32 +276,32 @@ namespace ReParser
 			{
 				if (ConstType == ETokenConstType::Int64)
 				{
-					OutBool = Int64 != 0;
+					OutBool = Value.Int64 != 0;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Int)
 				{
-					OutBool = Int != 0;
+					OutBool = Value.Int != 0;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Byte)
 				{
-					OutBool = Byte != 0;
+					OutBool = Value.Byte != 0;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Float)
 				{
-					OutBool = Float != 0;
+					OutBool = Value.Float != 0;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Double)
 				{
-					OutBool = Double != 0;
+					OutBool = Value.Double != 0;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Bool)
 				{
-					OutBool = NativeBool;
+					OutBool = Value.NativeBool;
 					return true;
 				}
 				else if (ConstType == ETokenConstType::Nullptr)

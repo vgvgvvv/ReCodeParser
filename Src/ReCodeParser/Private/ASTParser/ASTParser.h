@@ -12,7 +12,13 @@ namespace ReParser::AST
     public:
         virtual ~ASTNode() = default;
     };
-    using ASTNodePtr = Re::UniquePtr<ASTNode>;
+    using ASTNodePtr = Re::SharedPtr<ASTNode>;
+
+    template<typename T, class ... Ts>
+    ASTNodePtr CreateASTNode(Ts&& ... args)
+    {
+        return Re::MakeShared<T>(std::forward<Ts>(args)...);
+    }
 
     class ASTNodeParser
     {
@@ -26,7 +32,7 @@ namespace ReParser::AST
     {
     public:
         bool Parse(ASTNodeParser& parser, ICodeFile* file, ASTParser& context, const Token& token);
-        Re::UniquePtr<ASTNode> Root;
+        Re::SharedPtr<ASTNode> Root;
     };
 
     class ASTParser : public BaseParserWithFile

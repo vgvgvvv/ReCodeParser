@@ -11,7 +11,19 @@ namespace ReParser::AST
     {
         DECLARE_DERIVED_CLASS(IdentifierNode, ASTNode)
     public:
+        explicit IdentifierNode(const Token& token)
+            : IdToken(token)
+        {
+            RE_ASSERT(token.GetTokenType() == ETokenType::Identifier);
+        }
 
+        const Token& GetToken() const
+        {
+            return IdToken;
+        }
+
+    private:
+        Token IdToken{};
     };
 
     // symbol token
@@ -19,23 +31,19 @@ namespace ReParser::AST
     {
         DECLARE_DERIVED_CLASS(SymbolNode, ASTNode)
     public:
+        explicit SymbolNode(const Token& token)
+                    : SymbolToken(token)
+        {
+            RE_ASSERT(token.GetTokenType() == ETokenType::Symbol);
+        }
+        
+        const Token& GetToken() const
+        {
+            return SymbolToken;
+        }
 
-    };
-
-    // number token
-    class NumNode : public ASTNode
-    {
-        DECLARE_DERIVED_CLASS(NumNode, ASTNode)
-    public:
-
-    };
-
-    // string token
-    class StringNode : public ASTNode
-    {
-        DECLARE_DERIVED_CLASS(StringNode, ASTNode)
-    public:
-
+    private:
+        Token SymbolToken{};
     };
 
     // const value
@@ -43,15 +51,47 @@ namespace ReParser::AST
     {
         DECLARE_DERIVED_CLASS(ConstNode, ASTNode)
     public:
+        explicit ConstNode(const Token& token)
+                           : ConstToken(token)
+        {
+            RE_ASSERT(token.GetTokenType() == ETokenType::Symbol);
+        }
 
+        const Token& GetToken() const
+        {
+            return ConstToken;
+        }
+
+    private:
+        Token ConstToken{};
     };
 
-    // block node
-    class BlockNode : public ASTNode
+    // number token
+    class NumNode : public ConstNode
     {
+        DECLARE_DERIVED_CLASS(NumNode, ConstNode)
     public:
-
+        explicit NumNode(const Token& token)
+            : SuperClass(token)
+        {
+            RE_ASSERT(token.GetConstType() == ETokenConstType::Float ||
+                token.GetConstType() == ETokenConstType::Double  ||
+                token.GetConstType() == ETokenConstType::Int ||
+                token.GetConstType() == ETokenConstType::Int64 ||
+                token.GetConstType() == ETokenConstType::Byte);
+        }
     };
 
+    // string token
+    class StringNode : public ConstNode
+    {
+        DECLARE_DERIVED_CLASS(StringNode, ConstNode)
+    public:
+        explicit StringNode(const Token& token)
+                   : SuperClass(token)
+        {
+            RE_ASSERT(token.GetConstType() == ETokenConstType::String);
+        }
+    };
 
 }
