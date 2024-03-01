@@ -44,6 +44,7 @@ namespace ReParser
 		char Identifier[NameSize]{};
 
 
+
 	public:
 		// Storage for Const
 		ETokenConstType ConstType = ETokenConstType::None;
