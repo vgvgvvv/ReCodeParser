@@ -43,20 +43,6 @@ namespace ReParser
 		// Token Identifier String
 		char Identifier[NameSize]{};
 
-		bool operator==(const Token& other) const
-		{
-			return TokenType == other.TokenType &&
-				ConstType == other.ConstType &&
-				Value.Byte == other.Value.Byte &&
-				Value.Int64 == other.Value.Int64 &&
-				Value.Int == other.Value.Int &&
-				Value.NativeBool == other.Value.NativeBool &&
-				Value.Float == other.Value.Float &&
-				Value.Byte == other.Value.Double &&
-				std::strcmp(Value.String, other.Value.String) == 0 &&
-				std::strcmp(Identifier, other.Identifier) == 0;
-
-		}
 
 	public:
 		// Storage for Const
@@ -74,6 +60,21 @@ namespace ReParser
 		} Value;
 
 	public:
+
+		bool operator==(const Token& other) const
+		{
+			return TokenType == other.TokenType &&
+				ConstType == other.ConstType &&
+				Value.Byte == other.Value.Byte &&
+				Value.Int64 == other.Value.Int64 &&
+				Value.Int == other.Value.Int &&
+				Value.NativeBool == other.Value.NativeBool &&
+				Value.Float == other.Value.Float &&
+				Value.Byte == other.Value.Double &&
+				std::strcmp(Value.String, other.Value.String) == 0 &&
+				std::strcmp(Identifier, other.Identifier) == 0;
+
+		}
 
 		void InitToken();
 

@@ -8,7 +8,7 @@ namespace ReParser
 		StartPos = 0;
 		StartLine = 0;
 		*Identifier = 0;
-		std::memset(String, 0, sizeof(String));
+		std::memset(Value.String, 0, sizeof(Value.String));
 	}
 
 	Re::String Token::GetTokenName() const
@@ -34,19 +34,19 @@ namespace ReParser
 			switch (ConstType)
 			{
 			case ETokenConstType::Byte:
-				return std::to_string(Byte);
+				return std::to_string(Value.Byte);
 			case ETokenConstType::Int:
-				return std::to_string(Int);
+				return std::to_string(Value.Int);
 			case ETokenConstType::Int64:
-				return std::to_string(Int64);
+				return std::to_string(Value.Int64);
 			case ETokenConstType::Bool:
-				return NativeBool ? "true" : "false";
+				return Value.NativeBool ? "true" : "false";
 			case ETokenConstType::Float:
-				return std::to_string(Float);
+				return std::to_string(Value.Float);
 			case ETokenConstType::Double:
-				return std::to_string(Double);
+				return std::to_string(Value.Double);
 			case ETokenConstType::String:
-				return Re::String("\"") + String + "\"";
+				return Re::String("\"") + Value.String + "\"";
 			case ETokenConstType::Nullptr:
 				return "nullptr";
 			default:
