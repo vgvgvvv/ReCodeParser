@@ -119,7 +119,7 @@ namespace ReParser::BNF
         auto currentLine = InputLine;
         if(!(token.Matches("::") && MatchSymbol("=")))
         {
-            SetError(RE_FORMAT("BNF rule must split by '::=' operator"));
+            SetError(RE_FORMAT("BNF rule must split by '::=' operator %s", GetFileLocation(&file).c_str()));
             return false;
         }
 
@@ -139,6 +139,11 @@ namespace ReParser::BNF
             if(ParseASTParser(file, *nextToken, &parser))
             {
                 root->AddRule(parser);
+            }
+            else
+            {
+                SetError(RE_FORMAT("parse BNF rule failed %s", GetFileLocation(&file).c_str()));
+                return false;
             }
         }
 
@@ -165,14 +170,19 @@ namespace ReParser::BNF
         {
             // handle (x x x)
         }
+        else if(token.GetTokenType() == ETokenType::Const && token.ConstType == ETokenConstType::String)
+        {
+            // handle "xxx"
+        }
         else
         {
-            if(token.GetTokenType() == ETokenType::Const && token.ConstType == ETokenConstType::String)
-            {
-                // handle "xxx"
-            }
+            SetError(RE_FORMAT("invalid rule info %s", GetFileLocation(&file).c_str()));
+            return false;
+        }
 
-            auto afterToken = GetToken(true);
+        auto afterToken = GetToken(true);
+        if(afterToken)
+        {
             if(afterToken->Matches("*"))
             {
                 // handle
@@ -184,6 +194,11 @@ namespace ReParser::BNF
             else if(afterToken->Matches("|"))
             {
 
+            }
+            else
+            {
+                SetError(RE_FORMAT("invalid rule info %s", GetFileLocation(&file).c_str()));
+                return false;
             }
         }
 
