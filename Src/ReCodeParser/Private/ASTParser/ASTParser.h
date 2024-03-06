@@ -11,6 +11,8 @@ namespace ReParser::AST
         DECLARE_CLASS(ASTNode)
     public:
         virtual ~ASTNode() = default;
+    private:
+        Re::String Name;
     };
     using ASTNodePtr = Re::SharedPtr<ASTNode>;
 
@@ -28,7 +30,7 @@ namespace ReParser::AST
         virtual bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) = 0;
     };
 
-    class Rule
+    class ASTTree
     {
     public:
         bool Parse(ASTNodeParser& parser, ICodeFile* file, ASTParser& context, const Token& token);
@@ -39,14 +41,14 @@ namespace ReParser::AST
     {
         DECLARE_CLASS(ASTParser)
     public:
-        ASTParser(Re::UniquePtr<ASTNodeParser>&& lexer)
-            : Lexer(RE_MOVE(lexer))
+        ASTParser(const Re::SharedPtr<ASTNodeParser>& lexer)
+            : Lexer(lexer)
         {
         }
 
         bool CompileDeclaration(ICodeFile* file, const Token& token) override;
     private:
-        Rule MainRule;
-        Re::UniquePtr<ASTNodeParser> Lexer;
+        ASTTree Tree;
+        Re::SharedPtr<ASTNodeParser> Lexer;
     };
 }

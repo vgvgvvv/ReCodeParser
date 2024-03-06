@@ -1,6 +1,11 @@
 #pragma once
 #include "Internal/BaseParser.h"
 
+namespace ReParser::AST
+{
+    class ASTNodeParser;
+}
+
 namespace ReParser::BNF
 {
 /** sample
@@ -29,8 +34,18 @@ namespace ReParser::BNF
  *          A|B     //A、B是并列选项，只能选一个
 
  **/
-    
-    class BNFParser : public BaseParser
+
+    class BNFFile : public ICodeFile
+    {
+        DECLARE_DERIVED_CLASS(BNFFile, ICodeFile)
+    public:
+        static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath);
+        bool AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr);
+    private:
+        Re::Map<Re::String, Re::SharedPtr<AST::ASTNodeParser>> RuleLexers;
+    };
+
+    class BNFParser : public BaseParserWithFile
     {
         enum class ParseState
         {
@@ -39,9 +54,17 @@ namespace ReParser::BNF
             Right
         };
 
-        bool CompileDeclaration(const Token& token) override;
+        bool CompileDeclaration(ICodeFile* file, const Token& token) override;
     private:
+
+        bool ParseGlobal(BNFFile& file, const Token& token);
+        bool ParseLeft(BNFFile& file, const Token& token);
+        bool ParseRight(BNFFile& file, const Token& token);
+
+    private:
+
         int32 LastLine = 0;
         ParseState CurrentState = ParseState::Global;
+        Re::Stack<AST::ASTNodeParser*> ParserStack;
     };
 }
