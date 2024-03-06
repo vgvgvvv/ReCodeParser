@@ -6,66 +6,66 @@ namespace ReParser::AST
 // parser below is used for BNF
 
     // 'A' or "A"
-    class RequiredIdentifierNode : public ASTNodeParser
+    class RequiredIdentifierNodeParser : public ASTNodeParser
     {
-        DECLARE_DERIVED_CLASS(RequiredIdentifierNode, ASTNodeParser)
+        DECLARE_DERIVED_CLASS(RequiredIdentifierNodeParser, ASTNodeParser)
     public:
-        ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) override;
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
 
     private:
         Re::String TokenName;
     };
 
     // A | B
-    class OrNode : public ASTNodeParser
+    class OrNodeParser : public ASTNodeParser
     {
-        DECLARE_DERIVED_CLASS(OrNode, ASTNodeParser)
+        DECLARE_DERIVED_CLASS(OrNodeParser, ASTNodeParser)
     public:
-        ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) override;
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         void AddRule(const Re::WeakPtr<ASTNodeParser>& rule) { SubRules.push_back(rule); }
     private:
-        Re::Vector<Re::WeakPtr<ASTNodeParser>> SubRules;
+        Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;
     };
 
     // (A B)
-    class GroupNode : public ASTNodeParser
+    class GroupNodeParser : public ASTNodeParser
     {
-        DECLARE_DERIVED_CLASS(GroupNode, ASTNodeParser)
+        DECLARE_DERIVED_CLASS(GroupNodeParser, ASTNodeParser)
     public:
-        ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) override;
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         void AddRule(const Re::WeakPtr<ASTNodeParser>& rule) { SubRules.push_back(rule); }
     private:
-        Re::Vector<Re::WeakPtr<ASTNodeParser>> SubRules;
+        Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;
     };
 
     // [A] is optional
-    class OptionNode : public ASTNodeParser
+    class OptionNodeParser : public ASTNodeParser
     {
-        DECLARE_DERIVED_CLASS(OptionNode, ASTNodeParser)
+        DECLARE_DERIVED_CLASS(OptionNodeParser, ASTNodeParser)
     public:
-        ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) override;
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
     private:
-        Re::SharedPtr<ASTNodeParser> RealNode;
+        Re::SharedPtr<ASTNodeParser> SubRule;
     };
 
     // {A} or A*
-    class OptionalRepeatNode : public ASTNodeParser
+    class OptionalRepeatNodeParser : public ASTNodeParser
     {
-        DECLARE_DERIVED_CLASS(OptionalRepeatNode, ASTNodeParser)
+        DECLARE_DERIVED_CLASS(OptionalRepeatNodeParser, ASTNodeParser)
     public:
-        ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) override;
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
     private:
-        Re::SharedPtr<ASTNodeParser> RealNode;
+        Re::SharedPtr<ASTNodeParser> SubRule;
     };
 
     // A+
-    class RepeatNode : public ASTNodeParser
+    class RepeatNodeParser : public ASTNodeParser
     {
-        DECLARE_DERIVED_CLASS(RepeatNode, ASTNodeParser)
+        DECLARE_DERIVED_CLASS(RepeatNodeParser, ASTNodeParser)
     public:
-        ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) override;
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
     private:
-        Re::SharedPtr<ASTNodeParser> RealNode;
+        Re::SharedPtr<ASTNodeParser> SubRule;
     };
 
 }

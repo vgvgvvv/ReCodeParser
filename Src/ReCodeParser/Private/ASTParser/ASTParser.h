@@ -25,7 +25,7 @@ namespace ReParser::AST
         DECLARE_CLASS(ASTNodeParser)
     public:
         virtual ~ASTNodeParser() = default;
-        virtual ASTNodePtr Parse(ICodeFile* file, ASTParser& context, const Token& token) = 0;
+        virtual bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) = 0;
     };
 
     class Rule

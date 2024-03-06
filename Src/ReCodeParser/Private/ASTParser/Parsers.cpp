@@ -3,66 +3,139 @@
 
 namespace ReParser::AST
 {
-    DEFINE_DERIVED_CLASS(RequiredIdentifierNode, ASTNodeParser)
+    DEFINE_DERIVED_CLASS(RequiredIdentifierNodeParser, ASTNodeParser)
     // `xxx` in BNF
-    ASTNodePtr RequiredIdentifierNode::Parse(ICodeFile* file, ASTParser& context, const Token& token)
+    bool RequiredIdentifierNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
         if(token.Matches(TokenName.c_str()))
         {
-            return CreateASTNode<IdentifierNode>(token);
+            *outNode = CreateASTNode<IdentifierNode>(token);
+            return true;
         }
-        return nullptr;
+        return false;
     }
 
-    DEFINE_DERIVED_CLASS(OrNode, ASTNodeParser)
+    DEFINE_DERIVED_CLASS(OrNodeParser, ASTNodeParser)
     // a | b in BNF
-    ASTNodePtr OrNode::Parse(ICodeFile* file, ASTParser& context, const Token& token)
+    bool OrNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
         for (auto& subRule : SubRules)
         {
-            auto rule = Re::WeakPtrGetSafe(subRule);
+            auto rule = Re::SharedPtrGet(subRule);
             if(!rule)
             {
                 continue;
             }
-            auto result = rule->Parse(file, context, token);
-            if(result)
+            if(rule->Parse(file, context, token, outNode))
             {
-               return result;
+               return true;
             }
             context.UngetToken(token);
             auto nextToken = context.GetToken(file);
             RE_ASSERT(*nextToken == token);
         }
-        return nullptr;
+        return false;
     }
 
-    DEFINE_DERIVED_CLASS(GroupNode, ASTNodeParser)
+    DEFINE_DERIVED_CLASS(GroupNodeParser, ASTNodeParser)
     // (a b) in BNF
-    ASTNodePtr GroupNode::Parse(ICodeFile* file, ASTParser& context, const Token& token)
+    bool GroupNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
-        return nullptr;
+        Re::SharedPtr<GroupNode> result = Re::MakeShared<GroupNode>();
+        for (auto& subRule : SubRules)
+        {
+            auto rule = Re::SharedPtrGet(subRule);
+            if(!rule)
+            {
+                return false;
+            }
+            ASTNodePtr subNode;
+            if(!rule->Parse(file, context, token, &subNode))
+            {
+                context.UngetToken(token);
+                auto nextToken = context.GetToken(file);
+                RE_ASSERT(*nextToken == token);
+                return false;
+            }
+            result->AppendNode(subNode);
+        }
+
+        return true;
     }
 
-    DEFINE_DERIVED_CLASS(OptionNode, ASTNodeParser)
+    DEFINE_DERIVED_CLASS(OptionNodeParser, ASTNodeParser)
     // [a] in BNF
-    ASTNodePtr OptionNode::Parse(ICodeFile* file, ASTParser& context, const Token& token)
+    bool OptionNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
-        return nullptr;
+        if(!SubRule)
+        {
+            return true;
+        }
+        if(!SubRule->Parse(file, context, token, outNode))
+        {
+            context.UngetToken(token);
+            auto nextToken = context.GetToken(file);
+            RE_ASSERT(*nextToken == token);
+            return true;
+        }
+        return true;
     }
 
-    DEFINE_DERIVED_CLASS(OptionalRepeatNode, ASTNodeParser)
+    DEFINE_DERIVED_CLASS(OptionalRepeatNodeParser, ASTNodeParser)
 
     // {a} or a* in BNF
-    ASTNodePtr OptionalRepeatNode::Parse(ICodeFile* file, ASTParser& context, const Token& token)
+    bool OptionalRepeatNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
-        return nullptr;
+        Re::SharedPtr<GroupNode> result = Re::MakeShared<GroupNode>();
+        *outNode = result;
+        auto startToken = token;
+        while(true)
+        {
+            ASTNodePtr subNode;
+            if(SubRule->Parse(file, context, startToken, &subNode))
+            {
+                result->AppendNode(subNode);
+                startToken = *context.GetToken();
+            }
+            else
+            {
+                context.UngetToken(startToken);
+                auto nextToken = context.GetToken(file);
+                RE_ASSERT(*nextToken == token);
+                break;
+            }
+        }
+        return true;
     }
 
-    DEFINE_DERIVED_CLASS(RepeatNode, ASTNodeParser)
+    DEFINE_DERIVED_CLASS(RepeatNodeParser, ASTNodeParser)
     // a+ in BNF
-    ASTNodePtr RepeatNode::Parse(ICodeFile* file, ASTParser& context, const Token& token)
+    bool RepeatNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
-        return nullptr;
+        Re::SharedPtr<GroupNode> result = Re::MakeShared<GroupNode>();
+        *outNode = result;
+        auto startToken = token;
+        while(true)
+        {
+            ASTNodePtr subNode;
+            if(SubRule->Parse(file, context, startToken, &subNode))
+            {
+                result->AppendNode(subNode);
+                startToken = *context.GetToken();
+            }
+            else
+            {
+                context.UngetToken(startToken);
+                auto nextToken = context.GetToken(file);
+                RE_ASSERT(*nextToken == token);
+                break;
+            }
+        }
+        if(result->GetSubNodes().empty())
+        {
+            outNode->reset();
+            return false;
+        }
+        return true;
     }
 }

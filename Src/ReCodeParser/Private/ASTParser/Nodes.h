@@ -26,6 +26,29 @@ namespace ReParser::AST
         Token IdToken{};
     };
 
+    class GroupNode : public ASTNode
+    {
+        DECLARE_DERIVED_CLASS(GroupNode, ASTNode)
+    public:
+        GroupNode()
+        {
+        }
+
+        void AppendNode(const ASTNodePtr& node)
+        {
+            SubNodes.push_back(node);
+        }
+
+        const Re::Vector<ASTNodePtr>& GetSubNodes() const
+        {
+            return SubNodes;
+        }
+
+    private:
+        Re::Vector<ASTNodePtr> SubNodes;
+    };
+
+
     // symbol token
     class SymbolNode : public ASTNode
     {
