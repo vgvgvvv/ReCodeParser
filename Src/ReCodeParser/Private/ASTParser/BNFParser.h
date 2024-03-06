@@ -41,6 +41,7 @@ namespace ReParser::BNF
     public:
         static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath);
         bool AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr);
+
     private:
         Re::Map<Re::String, Re::SharedPtr<AST::ASTNodeParser>> RuleLexers;
     };
@@ -60,6 +61,7 @@ namespace ReParser::BNF
         bool ParseGlobal(BNFFile& file, const Token& token);
         bool ParseLeft(BNFFile& file, const Token& token);
         bool ParseRight(BNFFile& file, const Token& token);
+        bool ParseASTParser(BNFFile& file, const Token& tokentoken, Re::SharedPtr<AST::ASTNodeParser>* outParser);
 
     private:
 

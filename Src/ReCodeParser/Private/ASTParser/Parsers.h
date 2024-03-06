@@ -33,7 +33,8 @@ namespace ReParser::AST
         DECLARE_DERIVED_CLASS(GroupNodeParser, ASTNodeParser)
     public:
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
-        void AddRule(const Re::WeakPtr<ASTNodeParser>& rule) { SubRules.push_back(rule); }
+        void AddRule(const Re::SharedPtr<ASTNodeParser>& rule) { SubRules.push_back(rule); }
+        const Re::Vector<Re::SharedPtr<ASTNodeParser>>& GetSubRules() { return SubRules; }
     private:
         Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;
     };

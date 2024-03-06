@@ -12,13 +12,23 @@ namespace ReParser::BNF
 
     bool BNFFile::AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr)
     {
-        auto it = RuleLexers.insert(RE_MAKE_PAIR(ruleName, Re::MakeShared<AST::GroupNodeParser>()));
-        if(!it.second)
+        auto it = RuleLexers.find(ruleName);
+        if(it == RuleLexers.end())
         {
-            return false;
+            auto result = RuleLexers.insert(RE_MAKE_PAIR(ruleName, Re::MakeShared<AST::GroupNodeParser>()));
+            *outParserPtr = Re::SharedPtrGet(result.first->second);
+            return true;
         }
-        *outParserPtr = Re::SharedPtrGet(it.first->second);
-        return true;
+        else
+        {
+            Re::SharedPtr<AST::GroupNodeParser> groupParser = Re::SharedPtrCast<AST::GroupNodeParser>(it->second);
+            if(!groupParser->GetSubRules().empty())
+            {
+                return false;
+            }
+            *outParserPtr = Re::SharedPtrGet(groupParser);
+            return true;
+        }
     }
 
     bool BNFParser::CompileDeclaration(ICodeFile* file, const Token& token)
@@ -106,7 +116,78 @@ namespace ReParser::BNF
 
     bool BNFParser::ParseRight(BNFFile& file, const Token& token)
     {
-        // TODO parse right
+        auto currentLine = InputLine;
+        if(!(token.Matches("::") && MatchSymbol("=")))
+        {
+            SetError(RE_FORMAT("BNF rule must split by '::=' operator"));
+            return false;
+        }
+
+        RE_ASSERT(!ParserStack.empty())
+        auto root = ReClassSystem::CastTo<AST::GroupNodeParser>(ParserStack.top());
+        RE_ASSERT(root)
+
+        while(true)
+        {
+            auto nextToken = GetToken();
+            if(currentLine != InputLine)
+            {
+                UngetToken(nextToken);
+                break;
+            }
+            Re::SharedPtr<AST::ASTNodeParser> parser;
+            if(ParseASTParser(file, *nextToken, &parser))
+            {
+                root->AddRule(parser);
+            }
+        }
+
+
         return true;
     }
+
+    bool BNFParser::ParseASTParser(BNFFile& file, const Token& token, Re::SharedPtr<AST::ASTNodeParser>* outParser)
+    {
+        auto currentLine = InputLine;
+        if(token.Matches("<"))
+        {
+            // handle <xxx>
+        }
+        else if(token.Matches("["))
+        {
+            // handle [xxx]
+        }
+        else if(token.Matches("{"))
+        {
+            // handle {xxx}
+        }
+        else if(token.Matches("("))
+        {
+            // handle (x x x)
+        }
+        else
+        {
+            if(token.GetTokenType() == ETokenType::Const && token.ConstType == ETokenConstType::String)
+            {
+                // handle "xxx"
+            }
+
+            auto afterToken = GetToken(true);
+            if(afterToken->Matches("*"))
+            {
+                // handle
+            }
+            else if(afterToken->Matches("+"))
+            {
+
+            }
+            else if(afterToken->Matches("|"))
+            {
+
+            }
+        }
+
+        return true;
+    }
+
 }
