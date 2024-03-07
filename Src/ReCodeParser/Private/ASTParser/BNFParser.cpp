@@ -281,7 +281,17 @@ namespace ReParser::BNF
             }
             currentToken = *GetToken();
         }
-        outParser = root;
+        if(!outParser)
+        {
+            outParser = root;
+        }
+        else
+        {
+            for (auto subRule : root->GetSubRules())
+            {
+                outParser->AddRule(subRule);
+            }
+        }
         return true;
     }
 
