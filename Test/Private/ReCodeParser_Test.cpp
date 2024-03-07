@@ -3,6 +3,7 @@
 #include "TestCases.h"
 int main()
 {
-	TestIni();
+	// TestIni();
+	TestBNF();
 	return 0;
 }

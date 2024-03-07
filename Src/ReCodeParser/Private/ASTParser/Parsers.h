@@ -10,10 +10,14 @@ namespace ReParser::AST
     {
         DECLARE_DERIVED_CLASS(RequiredIdentifierNodeParser, ASTNodeParser)
     public:
+        explicit RequiredIdentifierNodeParser(const Re::String& name)
+          : TokenName(name)
+        {
+        }
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         Re::String ToString() const override;
     private:
-        Re::String TokenName;
+        Re::String TokenName{};
     };
 
     // A | B
@@ -46,28 +50,40 @@ namespace ReParser::AST
     {
         DECLARE_DERIVED_CLASS(OptionNodeParser, ASTNodeParser)
     public:
+        explicit OptionNodeParser(const Re::SharedPtr<ASTNodeParser>& subRule)
+            : SubRule(subRule)
+        {
+        }
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         Re::String ToString() const override;
     private:
-        Re::SharedPtr<ASTNodeParser> SubRule;
+        Re::SharedPtr<ASTNodeParser> SubRule{};
     };
 
-    // {A} or A*
+    // {A} or A* optional repeat
     class OptionalRepeatNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(OptionalRepeatNodeParser, ASTNodeParser)
     public:
+        explicit OptionalRepeatNodeParser(const Re::SharedPtr<ASTNodeParser>& subRule)
+            : SubRule(subRule)
+        {
+        }
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         Re::String ToString() const override;
     private:
         Re::SharedPtr<ASTNodeParser> SubRule;
     };
 
-    // A+
+    // A+ at least one repeat
     class RepeatNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(RepeatNodeParser, ASTNodeParser)
     public:
+        explicit RepeatNodeParser(const Re::SharedPtr<ASTNodeParser>& subRule)
+          : SubRule(subRule)
+        {
+        }
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         Re::String ToString() const override;
     private:

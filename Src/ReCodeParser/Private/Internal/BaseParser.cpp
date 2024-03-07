@@ -200,7 +200,7 @@ namespace ReParser
 
 	void BaseParser::SetError(const Re::String& str)
 	{
-		Errors.push(str);
+		Errors.push_back(str);
 	}
 
 	bool BaseParser::GetError(Re::String& str)
@@ -209,7 +209,10 @@ namespace ReParser
 		{
 			return false;
 		}
-		str = Errors.top();
+		for (const auto& error : Errors)
+		{
+			str += error + "\n";
+		}
 		return true;
 	}
 
@@ -793,6 +796,18 @@ namespace ReParser
 			}
 		}
 		return false;
+	}
+
+	bool BaseParser::IsEndOfLine(int currentLine)
+	{
+    	auto token = GetToken();
+    	if(!token)
+		{
+			return true;
+		}
+    	auto newLine = InputLine;
+    	UngetToken(token);
+    	return currentLine != newLine;
 	}
 
 	bool BaseParser::MatchToken(Re::Func<bool(const Token&)> Condition)

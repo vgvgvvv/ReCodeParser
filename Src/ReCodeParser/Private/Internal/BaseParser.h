@@ -125,6 +125,7 @@ namespace ReParser
 		bool PeekIdentifier(const char* Match);
 		bool MatchSymbol(const char Match);
 		bool MatchSymbol(const char* Match);
+		bool IsEndOfLine(int currentLine);
 		bool MatchToken(Re::Func<bool(const Token&)> Condition);
 		bool MatchSemi();
 		bool PeekSymbol(char Match);
@@ -165,7 +166,7 @@ namespace ReParser
 
 		Re::String FileName;
 
-		Re::Stack<Re::String> Errors;
+		Re::Vector<Re::String> Errors;
 	};
 
 	class BaseParserWithFile : public BaseParser

@@ -63,7 +63,10 @@ namespace ReParser::BNF
 
         static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath);
         static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath, const Re::String& content);
-        bool AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr);
+
+        using RuleLexersMap = Re::Map<Re::String, Re::SharedPtr<AST::ASTNodeParser>>;
+        const RuleLexersMap& GetRuleLexers() const { return RuleLexers; }
+        bool AppendRule(const Re::String& ruleName, Re::SharedPtr<AST::ASTNodeParser>* outParserPtr);
 
         const Re::String& GetFilePath() const override { return FilePath; }
         const Re::String& GetContent() const override { return Content; }
@@ -73,7 +76,7 @@ namespace ReParser::BNF
     private:
         Re::String FilePath;
         Re::String Content;
-        Re::Map<Re::String, Re::SharedPtr<AST::ASTNodeParser>> RuleLexers;
+        RuleLexersMap RuleLexers;
     };
 
 }

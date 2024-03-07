@@ -3,7 +3,7 @@
 
 namespace ReParser::AST
 {
-    DEFINE_DERIVED_CLASS(RequiredIdentifierNodeParser, ASTNodeParser)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(RequiredIdentifierNodeParser, ASTNodeParser)
     // `xxx` in BNF
     bool RequiredIdentifierNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
@@ -24,7 +24,7 @@ namespace ReParser::AST
         return Result;
     }
 
-    DEFINE_DERIVED_CLASS(OrNodeParser, ASTNodeParser)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(OrNodeParser, ASTNodeParser)
     // a | b in BNF
     bool OrNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
@@ -72,7 +72,7 @@ namespace ReParser::AST
         return Result;
     }
 
-    DEFINE_DERIVED_CLASS(GroupNodeParser, ASTNodeParser)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(GroupNodeParser, ASTNodeParser)
     // (a b) in BNF
     bool GroupNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
@@ -125,7 +125,7 @@ namespace ReParser::AST
         return Result;
     }
 
-    DEFINE_DERIVED_CLASS(OptionNodeParser, ASTNodeParser)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(OptionNodeParser, ASTNodeParser)
     // [a] in BNF
     bool OptionNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
@@ -161,7 +161,7 @@ namespace ReParser::AST
         return Result;
     }
 
-    DEFINE_DERIVED_CLASS(OptionalRepeatNodeParser, ASTNodeParser)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(OptionalRepeatNodeParser, ASTNodeParser)
 
     // {a} or a* in BNF
     bool OptionalRepeatNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
@@ -206,7 +206,7 @@ namespace ReParser::AST
         return Result;
     }
 
-    DEFINE_DERIVED_CLASS(RepeatNodeParser, ASTNodeParser)
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(RepeatNodeParser, ASTNodeParser)
     // a+ in BNF
     bool RepeatNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {

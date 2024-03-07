@@ -19,13 +19,14 @@ namespace ReParser::BNF
         bool ParseGlobal(BNFFile& file, const Token& token);
         bool ParseLeft(BNFFile& file, const Token& token);
         bool ParseRight(BNFFile& file, const Token& token);
-        bool ParseASTParser(BNFFile& file, const Token& tokentoken, Re::SharedPtr<AST::ASTNodeParser>* outParser);
+        bool ParseASTParserGroup(BNFFile& file, const Token& token, Re::SharedPtr<AST::GroupNodeParser>& outParser);
+        bool ParseASTParser(BNFFile& file, const Token& token, Re::SharedPtr<AST::ASTNodeParser>* outParser);
 
     private:
 
         int32 LastLine = 0;
         ParseState CurrentState = ParseState::Global;
-        Re::Stack<AST::ASTNodeParser*> ParserStack;
+        Re::Stack<Re::WeakPtr<AST::ASTNodeParser>> ParserStack;
     };
 
     DEFINE_DERIVED_CLASS_WITHOUT_NEW(BNFFile, ICodeFile)
@@ -56,13 +57,13 @@ namespace ReParser::BNF
         return result;
     }
 
-    bool BNFFile::AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr)
+    bool BNFFile::AppendRule(const Re::String& ruleName, Re::SharedPtr<AST::ASTNodeParser>* outParserPtr)
     {
         auto it = RuleLexers.find(ruleName);
         if(it == RuleLexers.end())
         {
             auto result = RuleLexers.insert(RE_MAKE_PAIR(ruleName, Re::MakeShared<AST::GroupNodeParser>()));
-            auto parser = Re::SharedPtrGet(result.first->second);
+            auto parser = result.first->second;
             parser->SetDefinedName(ruleName);
             *outParserPtr = parser;
             return true;
@@ -74,7 +75,7 @@ namespace ReParser::BNF
             {
                 return false;
             }
-            *outParserPtr = Re::SharedPtrGet(groupParser);
+            *outParserPtr = groupParser;
             return true;
         }
     }
@@ -135,7 +136,7 @@ namespace ReParser::BNF
     {
         if(!token.Matches('<'))
         {
-            SetError(RE_FORMAT("BNF line should start with '<'", GetFileLocation(&file).c_str()));
+            SetError(RE_FORMAT("BNF line should start with '<' %s", GetFileLocation(&file).c_str()));
             return false;
         }
         UngetToken(token);
@@ -154,11 +155,11 @@ namespace ReParser::BNF
         Token currentToken = token;
         while(true)
         {
-            if(token.Matches('>'))
+            currentToken = *GetToken(false);
+            if(currentToken.Matches('>'))
             {
                 break;
             }
-            currentToken = *GetToken(false);
             lexerName += currentToken.GetTokenName();
         }
 
@@ -168,7 +169,7 @@ namespace ReParser::BNF
             return false;
         }
 
-        AST::ASTNodeParser* rootParser;
+        Re::SharedPtr<AST::ASTNodeParser> rootParser;
         if(!file.AppendRule(lexerName, &rootParser))
         {
             SetError(RE_FORMAT("BNF rule name %s repeated !! %s", lexerName.c_str(), GetFileLocation(&file).c_str()));
@@ -176,6 +177,7 @@ namespace ReParser::BNF
         }
 
         ParserStack.push(rootParser);
+        CurrentState = ParseState::Right;
 
         return true;
     }
@@ -190,55 +192,199 @@ namespace ReParser::BNF
         }
 
         RE_ASSERT(!ParserStack.empty())
-        auto root = ReClassSystem::CastTo<AST::GroupNodeParser>(ParserStack.top());
-        RE_ASSERT(root)
+        auto root = Re::SharedPtrCast<AST::GroupNodeParser>(ParserStack.top().lock());
+        RE_ASSERT(root != nullptr)
 
+        if(IsEndOfLine(currentLine))
+        {
+            SetError(RE_FORMAT("unexpect EOL %s", GetFileLocation(&file).c_str()));
+            return false;
+        }
+        auto nextToken = GetToken();
+        if(!nextToken)
+        {
+            SetError(RE_FORMAT("unexpect EOL %s", GetFileLocation(&file).c_str()));
+            return false;
+        }
+
+        ParseASTParserGroup(file, *nextToken, root);
+
+        ParserStack.pop();
+        CurrentState = ParseState::Global;
+
+        return true;
+    }
+
+    bool BNFParser::ParseASTParserGroup(BNFFile& file, const Token& token, Re::SharedPtr<AST::GroupNodeParser>& outParser)
+    {
+        if(outParser && !outParser->GetSubRules().empty())
+        {
+            SetError(RE_FORMAT("group node must be empty before parse !! %s", GetFileLocation(&file).c_str()));
+            return false;
+        }
+
+        Re::SharedPtr<AST::GroupNodeParser> root = AST::CreateASTNode<AST::GroupNodeParser>();
+        Re::SharedPtr<AST::GroupNodeParser> childGroupInOrGroup;
+        Re::SharedPtr<AST::OrNodeParser> orGroup;
+        auto currentLine = InputLine;
+        auto currentToken = token;
         while(true)
         {
-            auto nextToken = GetToken();
-            if(currentLine != InputLine)
-            {
-                UngetToken(nextToken);
-                break;
-            }
             Re::SharedPtr<AST::ASTNodeParser> parser;
-            if(ParseASTParser(file, *nextToken, &parser))
+            if(ParseASTParser(file, currentToken, &parser))
             {
-                root->AddRule(parser);
+                if(!orGroup)
+                {
+                    // normal group (A B)
+                    root->AddRule(parser);
+                }
+                else
+                {
+                    // sub group in or group ((A B) | (C D))
+                    childGroupInOrGroup->AddRule(parser);
+                }
             }
             else
             {
                 SetError(RE_FORMAT("parse BNF rule failed %s", GetFileLocation(&file).c_str()));
                 return false;
             }
+
+            if(IsEndOfLine(currentLine))
+            {
+                break;
+            }
+
+            if(MatchSymbol("|"))
+            {
+                if(!orGroup)
+                {
+                    // change normal group to or group (xxx) -> ((xxx)|(xxx))
+                    orGroup = AST::CreateASTNode<AST::OrNodeParser>();
+                    orGroup->AddRule(root);
+                    root = AST::CreateASTNode<AST::GroupNodeParser>();
+                    root->AddRule(orGroup);
+                    // add next values in child groups
+                    childGroupInOrGroup = AST::CreateASTNode<AST::GroupNodeParser>();
+                }
+                else
+                {
+                    // add child group to or group, and create new child group
+                    orGroup->AddRule(childGroupInOrGroup);
+                    childGroupInOrGroup = AST::CreateASTNode<AST::GroupNodeParser>();
+                }
+            }
+
+            if(IsEndOfLine(currentLine))
+            {
+                break;
+            }
+            currentToken = *GetToken();
         }
-
-
+        outParser = root;
         return true;
     }
 
     bool BNFParser::ParseASTParser(BNFFile& file, const Token& token, Re::SharedPtr<AST::ASTNodeParser>* outParser)
     {
         auto currentLine = InputLine;
+        Re::SharedPtr<AST::ASTNodeParser> result;
         if(token.Matches("<"))
         {
             // handle <xxx>
+            Re::String lexerName;
+            Token currentToken = token;
+            while(true)
+            {
+                currentToken = *GetToken(false);
+                if(currentToken.Matches('>'))
+                {
+                    break;
+                }
+                if(currentLine != InputLine)
+                {
+                    SetError(RE_FORMAT("unexpect EOL %s", GetFileLocation(&file).c_str()));
+                    return false;
+                }
+                lexerName += currentToken.GetTokenName();
+            }
+            auto it = file.GetRuleLexers().find(lexerName);
+            if(it == file.GetRuleLexers().end())
+            {
+                file.AppendRule(lexerName, &result);
+            }
         }
         else if(token.Matches("["))
         {
             // handle [xxx]
+            // parse as [(xxx)]
+            auto group = AST::CreateASTNode<AST::GroupNodeParser>();
+            auto optionalNode = AST::CreateASTNode<AST::OptionNodeParser>(group);
+            while(true)
+            {
+                if(MatchSymbol("]"))
+                {
+                    break;
+                }
+                if(currentLine != InputLine)
+                {
+                    SetError(RE_FORMAT("unexpect EOL %s", GetFileLocation(&file).c_str()));
+                    return false;
+                }
+                auto nextToken = GetToken();
+                Re::SharedPtr<AST::ASTNodeParser> nextParser;
+                if(!ParseASTParser(file, *nextToken, &nextParser))
+                {
+                    SetError(RE_FORMAT("parse ASTParser failed !! %s", GetFileLocation(&file).c_str()));
+                    return false;
+                }
+                group->AddRule(nextParser);
+            }
+            result = optionalNode;
         }
         else if(token.Matches("{"))
         {
             // handle {xxx}
+            // parse as [(xxx)]
+            auto group = AST::CreateASTNode<AST::GroupNodeParser>();
+            auto optionalNode = AST::CreateASTNode<AST::OptionalRepeatNodeParser>(group);
+            while(true)
+            {
+                if(MatchSymbol("}"))
+                {
+                    break;
+                }
+                if(currentLine != InputLine)
+                {
+                    SetError(RE_FORMAT("unexpect EOL %s", GetFileLocation(&file).c_str()));
+                    return false;
+                }
+                auto nextToken = GetToken();
+                Re::SharedPtr<AST::ASTNodeParser> nextParser;
+                if(!ParseASTParser(file, *nextToken, &nextParser))
+                {
+                    SetError(RE_FORMAT("parse ASTParser failed !! %s", GetFileLocation(&file).c_str()));
+                    return false;
+                }
+                group->AddRule(nextParser);
+            }
+            result = optionalNode;
         }
         else if(token.Matches("("))
         {
             // handle (x x x)
+            auto group = AST::CreateASTNode<AST::GroupNodeParser>();
+            if(!ParseASTParserGroup(file, token, group))
+            {
+                SetError(RE_FORMAT("parse group node failed !! %s", GetFileLocation(&file).c_str()));
+                return false;
+            }
+            result = group;
         }
         else if(token.GetTokenType() == ETokenType::Const && token.ConstType == ETokenConstType::String)
         {
             // handle "xxx"
+            result = AST::CreateASTNode<AST::RequiredIdentifierNodeParser>(token.GetConstantValue());
         }
         else
         {
@@ -247,27 +393,33 @@ namespace ReParser::BNF
         }
 
         auto afterToken = GetToken(true);
-        if(afterToken)
+        if(currentLine == InputLine)
         {
-            if(afterToken->Matches("*"))
+            if(afterToken)
             {
-                // handle
-            }
-            else if(afterToken->Matches("+"))
-            {
-
-            }
-            else if(afterToken->Matches("|"))
-            {
-
-            }
-            else
-            {
-                SetError(RE_FORMAT("invalid rule info %s", GetFileLocation(&file).c_str()));
-                return false;
+                if(afterToken->Matches("*"))
+                {
+                    // handle
+                    auto repeatNode = AST::CreateASTNode<AST::OptionalRepeatNodeParser>(result);
+                    result = repeatNode;
+                }
+                else if(afterToken->Matches("+"))
+                {
+                    auto repeatNode = AST::CreateASTNode<AST::RepeatNodeParser>(result);
+                    result = repeatNode;
+                }
+                else
+                {
+                    UngetToken(afterToken);
+                }
             }
         }
+        else
+        {
+            UngetToken(afterToken);
+        }
 
+        *outParser = result;
         return true;
     }
 

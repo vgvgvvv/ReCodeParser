@@ -17,7 +17,7 @@ namespace ReParser::AST
     using ASTNodePtr = Re::SharedPtr<ASTNode>;
 
     template<typename T, class ... Ts>
-    ASTNodePtr CreateASTNode(Ts&& ... args)
+    Re::SharedPtr<T> CreateASTNode(Ts&& ... args)
     {
         return Re::MakeShared<T>(std::forward<Ts>(args)...);
     }
