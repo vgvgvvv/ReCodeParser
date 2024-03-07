@@ -28,6 +28,29 @@ namespace ReParser::AST
     public:
         virtual ~ASTNodeParser() = default;
         virtual bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) = 0;
+        virtual Re::String ToString() const = 0;
+
+        void SetDefinedName(const Re::String& name)
+        {
+            CustomName = name;
+        }
+
+        bool IsDefinedParser() const
+        {
+            return !CustomName.empty();
+        }
+
+        const char* GetName() const
+        {
+            if(!CustomName.empty())
+            {
+                return CustomName.c_str();
+            }
+            return GetClass().GetName();
+        }
+
+    private:
+        Re::String CustomName;
     };
 
     class ASTTree

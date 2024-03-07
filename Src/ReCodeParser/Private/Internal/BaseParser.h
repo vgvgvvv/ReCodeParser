@@ -14,6 +14,8 @@ namespace ReParser
 	public:
 		virtual ~IParsableFile() = default;
 		virtual const Re::String& GetFilePath() const = 0;
+
+		bool IsValid() const { return std::filesystem::exists(GetFilePath()); }
 	};
 
 	class ICodeFile : public IParsableFile

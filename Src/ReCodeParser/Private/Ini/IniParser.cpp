@@ -197,6 +197,10 @@ namespace ReParser::Ini
     IniFilePtr IniFile::Parse(const Re::String& filePath)
     {
         auto result = Re::MakeShared<IniFile>(filePath);
+        if(!result->IsValid())
+        {
+            return nullptr;
+        }
         IniParser parser;
         parser.InitParserSource(result->GetFilePath(), result->GetContent().c_str());
         parser.Parse(Re::SharedPtrGet(result));

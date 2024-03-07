@@ -4,10 +4,56 @@
 
 namespace ReParser::BNF
 {
+    class BNFParser : public BaseParserWithFile
+    {
+        enum class ParseState
+        {
+            Global,
+            Left,
+            Right
+        };
+
+        bool CompileDeclaration(ICodeFile* file, const Token& token) override;
+    private:
+
+        bool ParseGlobal(BNFFile& file, const Token& token);
+        bool ParseLeft(BNFFile& file, const Token& token);
+        bool ParseRight(BNFFile& file, const Token& token);
+        bool ParseASTParser(BNFFile& file, const Token& tokentoken, Re::SharedPtr<AST::ASTNodeParser>* outParser);
+
+    private:
+
+        int32 LastLine = 0;
+        ParseState CurrentState = ParseState::Global;
+        Re::Stack<AST::ASTNodeParser*> ParserStack;
+    };
+
     DEFINE_DERIVED_CLASS_WITHOUT_NEW(BNFFile, ICodeFile)
 
     Re::SharedPtr<BNFFile> BNFFile::Parse(const Re::String& filePath)
     {
+        auto result = Re::MakeShared<BNFFile>(filePath);
+        if(!result->IsValid())
+        {
+            return nullptr;
+        }
+        BNFParser parser;
+        parser.InitParserSource(result->GetFilePath(), result->GetContent().c_str());
+        parser.Parse(Re::SharedPtrGet(result));
+        return result;
+    }
+
+    Re::SharedPtr<BNFFile> BNFFile::Parse(const Re::String& filePath, const Re::String& content)
+    {
+        auto result = Re::MakeShared<BNFFile>(filePath, content);
+        if(!result->IsValid())
+        {
+            return nullptr;
+        }
+        BNFParser parser;
+        parser.InitParserSource(result->GetFilePath(), result->GetContent().c_str());
+        parser.Parse(Re::SharedPtrGet(result));
+        return result;
     }
 
     bool BNFFile::AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr)
@@ -16,7 +62,9 @@ namespace ReParser::BNF
         if(it == RuleLexers.end())
         {
             auto result = RuleLexers.insert(RE_MAKE_PAIR(ruleName, Re::MakeShared<AST::GroupNodeParser>()));
-            *outParserPtr = Re::SharedPtrGet(result.first->second);
+            auto parser = Re::SharedPtrGet(result.first->second);
+            parser->SetDefinedName(ruleName);
+            *outParserPtr = parser;
             return true;
         }
         else
@@ -29,6 +77,24 @@ namespace ReParser::BNF
             *outParserPtr = Re::SharedPtrGet(groupParser);
             return true;
         }
+    }
+
+    Re::String BNFFile::ToString() const
+    {
+        Re::String Result;
+        bool isFirst = true;
+        for (auto& lexer : RuleLexers)
+        {
+            if(!isFirst)
+            {
+                Result += "\n";
+            }
+            Result += lexer.first;
+            Result += "\t\t::= ";
+            Result += lexer.second->ToString();
+            isFirst = false;
+        }
+        return Result;
     }
 
     bool BNFParser::CompileDeclaration(ICodeFile* file, const Token& token)

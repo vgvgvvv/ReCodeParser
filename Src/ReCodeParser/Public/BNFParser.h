@@ -1,5 +1,6 @@
 #pragma once
-#include "Internal/BaseParser.h"
+#include "ReCodeParserDefine.h"
+#include "Private/Internal/BaseParser.h"
 
 namespace ReParser::AST
 {
@@ -35,38 +36,44 @@ namespace ReParser::BNF
 
  **/
 
-    class BNFFile : public ICodeFile
+    class RECODEPARSER_API BNFFile : public ICodeFile
     {
         DECLARE_DERIVED_CLASS(BNFFile, ICodeFile)
     public:
+
+        explicit BNFFile(const Re::String& filePath)
+            : FilePath(filePath)
+        {
+            if(!std::filesystem::exists(filePath))
+            {
+                RE_ERROR_F("read ini file %s failed !!", filePath.c_str());
+                return;
+            }
+            std::ifstream t(filePath);
+            std::stringstream buffer;
+            buffer << t.rdbuf();
+            Content = buffer.str();
+        }
+
+        explicit BNFFile(const Re::String& filePath, const Re::String& content)
+            : FilePath(filePath)
+            , Content(content)
+        {
+        }
+
         static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath);
+        static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath, const Re::String& content);
         bool AppendRule(const Re::String& ruleName, AST::ASTNodeParser** outParserPtr);
 
+        const Re::String& GetFilePath() const override { return FilePath; }
+        const Re::String& GetContent() const override { return Content; }
+
+        Re::String ToString() const;
+
     private:
+        Re::String FilePath;
+        Re::String Content;
         Re::Map<Re::String, Re::SharedPtr<AST::ASTNodeParser>> RuleLexers;
     };
 
-    class BNFParser : public BaseParserWithFile
-    {
-        enum class ParseState
-        {
-            Global,
-            Left,
-            Right
-        };
-
-        bool CompileDeclaration(ICodeFile* file, const Token& token) override;
-    private:
-
-        bool ParseGlobal(BNFFile& file, const Token& token);
-        bool ParseLeft(BNFFile& file, const Token& token);
-        bool ParseRight(BNFFile& file, const Token& token);
-        bool ParseASTParser(BNFFile& file, const Token& tokentoken, Re::SharedPtr<AST::ASTNodeParser>* outParser);
-
-    private:
-
-        int32 LastLine = 0;
-        ParseState CurrentState = ParseState::Global;
-        Re::Stack<AST::ASTNodeParser*> ParserStack;
-    };
 }

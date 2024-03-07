@@ -15,6 +15,15 @@ namespace ReParser::AST
         return false;
     }
 
+    Re::String RequiredIdentifierNodeParser::ToString() const
+    {
+        Re::String Result;
+        Result += "\"";
+        Result += TokenName;
+        Result += "\"";
+        return Result;
+    }
+
     DEFINE_DERIVED_CLASS(OrNodeParser, ASTNodeParser)
     // a | b in BNF
     bool OrNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
@@ -35,6 +44,32 @@ namespace ReParser::AST
             RE_ASSERT(*nextToken == token);
         }
         return false;
+    }
+
+    Re::String OrNodeParser::ToString() const
+    {
+        Re::String Result;
+        bool isFirst = true;
+        for (auto& subRule : SubRules)
+        {
+            if(!isFirst)
+            {
+                Result += " | ";
+            }
+            if(subRule->IsDefinedParser())
+            {
+                Result += "<";
+                Result += subRule->GetName();
+                Result += ">";
+            }
+            else
+            {
+                Result += subRule->ToString();
+            }
+            isFirst = false;
+        }
+
+        return Result;
     }
 
     DEFINE_DERIVED_CLASS(GroupNodeParser, ASTNodeParser)
@@ -63,6 +98,33 @@ namespace ReParser::AST
         return true;
     }
 
+    Re::String GroupNodeParser::ToString() const
+    {
+        Re::String Result;
+        Result += "(";
+        bool isFirst = true;
+        for (auto& subRule : SubRules)
+        {
+            if(!isFirst)
+            {
+                Result += " ";
+            }
+            if(subRule->IsDefinedParser())
+            {
+                Result += "<";
+                Result += subRule->GetName();
+                Result += ">";
+            }
+            else
+            {
+                Result += subRule->ToString();
+            }
+            isFirst = false;
+        }
+        Result += ")";
+        return Result;
+    }
+
     DEFINE_DERIVED_CLASS(OptionNodeParser, ASTNodeParser)
     // [a] in BNF
     bool OptionNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
@@ -79,6 +141,24 @@ namespace ReParser::AST
             return true;
         }
         return true;
+    }
+
+    Re::String OptionNodeParser::ToString() const
+    {
+        Re::String Result;
+        Result += "[";
+        if(SubRule->IsDefinedParser())
+        {
+            Result += "<";
+            Result += SubRule->GetName();
+            Result += ">";
+        }
+        else
+        {
+            Result += SubRule->ToString();
+        }
+        Result += "]";
+        return Result;
     }
 
     DEFINE_DERIVED_CLASS(OptionalRepeatNodeParser, ASTNodeParser)
@@ -106,6 +186,24 @@ namespace ReParser::AST
             }
         }
         return true;
+    }
+
+    Re::String OptionalRepeatNodeParser::ToString() const
+    {
+        Re::String Result;
+        Result += "{";
+        if(SubRule->IsDefinedParser())
+        {
+            Result += "<";
+            Result += SubRule->GetName();
+            Result += ">";
+        }
+        else
+        {
+            Result += SubRule->ToString();
+        }
+        Result += "}";
+        return Result;
     }
 
     DEFINE_DERIVED_CLASS(RepeatNodeParser, ASTNodeParser)
@@ -137,5 +235,24 @@ namespace ReParser::AST
             return false;
         }
         return true;
+    }
+
+    Re::String RepeatNodeParser::ToString() const
+    {
+        Re::String Result;
+
+        if(SubRule->IsDefinedParser())
+        {
+            Result += "<";
+            Result += SubRule->GetName();
+            Result += ">";
+        }
+        else
+        {
+            Result += SubRule->ToString();
+        }
+        Result += "+";
+
+        return Result;
     }
 }
