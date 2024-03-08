@@ -62,20 +62,37 @@ namespace ReParser::BNF
         auto it = RuleLexers.find(ruleName);
         if(it == RuleLexers.end())
         {
-            auto result = RuleLexers.insert(RE_MAKE_PAIR(ruleName, Re::MakeShared<AST::GroupNodeParser>()));
-            auto parser = result.first->second;
-            parser->SetDefinedName(ruleName);
-            *outParserPtr = parser;
+            auto parserClass = ReClassSystem::IClassContext::Get().GetClass(ruleName);
+            if(parserClass)
+            {
+                auto result = parserClass->Create<AST::ASTNodeParser>();
+                *outParserPtr = result;
+            }
+            else
+            {
+                auto result = RuleLexers.insert(RE_MAKE_PAIR(ruleName, Re::MakeShared<AST::GroupNodeParser>()));
+                auto parser = result.first->second;
+                parser->SetDefinedName(ruleName);
+                *outParserPtr = parser;
+            }
             return true;
         }
         else
         {
-            Re::SharedPtr<AST::GroupNodeParser> groupParser = Re::SharedPtrCast<AST::GroupNodeParser>(it->second);
-            if(!groupParser->GetSubRules().empty())
+            if(it->second->GetClass().IsA(AST::GroupNodeParser::StaticClass()))
             {
-                return false;
+                Re::SharedPtr<AST::GroupNodeParser> groupParser = Re::SharedPtrCast<AST::GroupNodeParser>(it->second);
+                if(!groupParser->GetSubRules().empty())
+                {
+                    RE_ERROR_F("append rule failed, %s has been added and not empty", ruleName.c_str());
+                    return false;
+                }
             }
-            *outParserPtr = groupParser;
+            else
+            {
+                // custom parser
+            }
+            *outParserPtr = it->second;
             return true;
         }
     }
