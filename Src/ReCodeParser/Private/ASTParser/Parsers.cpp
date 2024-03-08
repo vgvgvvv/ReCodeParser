@@ -101,7 +101,10 @@ namespace ReParser::AST
     Re::String GroupNodeParser::ToString() const
     {
         Re::String Result;
-        Result += "(";
+        if(SubRules.size() != 1 && !IsDefinedParser())
+        {
+            Result += "( ";
+        }
         bool isFirst = true;
         for (auto& subRule : SubRules)
         {
@@ -121,7 +124,10 @@ namespace ReParser::AST
             }
             isFirst = false;
         }
-        Result += ")";
+        if(SubRules.size() != 1 && !IsDefinedParser())
+        {
+            Result += " )";
+        }
         return Result;
     }
 
