@@ -90,8 +90,9 @@ namespace ReParser::BNF
             {
                 Result += "\n";
             }
+            Result += "\t\t\t\t";
             Result += lexer.first;
-            Result += "\t\t::= ";
+            Result += "\t\t\t\t::= ";
             Result += lexer.second->ToString();
             isFirst = false;
         }
@@ -261,17 +262,24 @@ namespace ReParser::BNF
                 {
                     // change normal group to or group (xxx) -> ((xxx)|(xxx))
                     orGroup = AST::CreateASTNode<AST::OrNodeParser>();
-                    orGroup->AddRule(root);
-                    root = AST::CreateASTNode<AST::GroupNodeParser>();
-                    root->AddRule(orGroup);
                     // add next values in child groups
                     childGroupInOrGroup = AST::CreateASTNode<AST::GroupNodeParser>();
+                    orGroup->AddRule(childGroupInOrGroup);
+                    for (auto& subRule : root->GetSubRules())
+                    {
+                        childGroupInOrGroup->AddRule(subRule);
+                    }
+                    root->ClearRules();
+                    root->AddRule(orGroup);
+
+                    childGroupInOrGroup = AST::CreateASTNode<AST::GroupNodeParser>();
+                    orGroup->AddRule(childGroupInOrGroup);
                 }
                 else
                 {
                     // add child group to or group, and create new child group
-                    orGroup->AddRule(childGroupInOrGroup);
                     childGroupInOrGroup = AST::CreateASTNode<AST::GroupNodeParser>();
+                    orGroup->AddRule(childGroupInOrGroup);
                 }
             }
 
@@ -322,6 +330,10 @@ namespace ReParser::BNF
             if(it == file.GetRuleLexers().end())
             {
                 file.AppendRule(lexerName, &result);
+            }
+            else
+            {
+                result = it->second;
             }
         }
         else if(token.Matches("["))

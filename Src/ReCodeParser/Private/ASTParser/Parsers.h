@@ -27,6 +27,7 @@ namespace ReParser::AST
     public:
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         void AddRule(const Re::SharedPtr<ASTNodeParser>& rule) { SubRules.push_back(rule); }
+        void ClearRules() { SubRules.clear(); }
         Re::String ToString() const override;
     private:
         Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;
@@ -40,6 +41,7 @@ namespace ReParser::AST
         bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
         void AddRule(const Re::SharedPtr<ASTNodeParser>& rule) { SubRules.push_back(rule); }
         const Re::Vector<Re::SharedPtr<ASTNodeParser>>& GetSubRules() { return SubRules; }
+        void ClearRules() { SubRules.clear(); }
         Re::String ToString() const override;
     private:
         Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;

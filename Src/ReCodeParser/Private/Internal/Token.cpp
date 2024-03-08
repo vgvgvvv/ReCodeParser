@@ -46,7 +46,7 @@ namespace ReParser
 			case ETokenConstType::Double:
 				return std::to_string(Value.Double);
 			case ETokenConstType::String:
-				return Re::String("\"") + Value.String + "\"";
+				return Value.String;
 			case ETokenConstType::Nullptr:
 				return "nullptr";
 			default:
