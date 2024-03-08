@@ -1,5 +1,6 @@
 #pragma once
 #include "ReCodeParserDefine.h"
+#include "Private/ASTParser/ASTParser.h"
 #include "Private/Internal/BaseParser.h"
 
 namespace ReParser::AST
@@ -70,6 +71,8 @@ namespace ReParser::BNF
 
         const Re::String& GetFilePath() const override { return FilePath; }
         const Re::String& GetContent() const override { return Content; }
+
+        Re::SharedPtr<AST::ASTParser> GenerateASTParser() const;
 
         Re::String ToString() const;
 

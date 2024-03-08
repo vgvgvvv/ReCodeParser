@@ -3,3 +3,5 @@
 void TestIni();
 
 void TestBNF();
+
+void TestASTParser();

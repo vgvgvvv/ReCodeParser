@@ -11,6 +11,7 @@ namespace ReParser::AST
         DECLARE_CLASS(ASTNode)
     public:
         virtual ~ASTNode() = default;
+        virtual Re::String ToString() const = 0;
     private:
         Re::String Name;
     };
@@ -57,6 +58,11 @@ namespace ReParser::AST
     {
     public:
         bool Parse(ASTNodeParser& parser, ICodeFile* file, ASTParser& context, const Token& token);
+
+        const ASTNode& GetRoot() const { return *Root; }
+        Re::String ToString() const;
+
+    private:
         Re::SharedPtr<ASTNode> Root;
     };
 
@@ -64,14 +70,20 @@ namespace ReParser::AST
     {
         DECLARE_CLASS(ASTParser)
     public:
-        ASTParser(const Re::SharedPtr<ASTNodeParser>& lexer)
+        explicit ASTParser(const Re::SharedPtr<ASTNodeParser>& lexer)
             : Lexer(lexer)
         {
         }
 
         bool CompileDeclaration(ICodeFile* file, const Token& token) override;
+        void AddCustomParser(const Re::String& name, const Re::SharedPtr<ASTNodeParser>& parser);
+        bool TryGetCustomParser(const Re::String& name, Re::SharedPtr<ASTNodeParser>* outParser);
+
+        const ASTTree& GetASTTree() const { return Tree; }
+
     private:
         ASTTree Tree;
         Re::SharedPtr<ASTNodeParser> Lexer;
+        Re::Map<Re::String, Re::SharedPtr<ASTNodeParser>> CustomParsers;
     };
 }

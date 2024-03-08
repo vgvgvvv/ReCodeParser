@@ -131,6 +131,20 @@ namespace ReParser::AST
         return Result;
     }
 
+    DEFINE_DERIVED_CLASS_WITHOUT_NEW(CustomNodeParser, ASTNodeParser)
+    bool CustomNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
+    {
+        if(!RealParser)
+        {
+            if(!context.TryGetCustomParser(CustomParserName, &RealParser))
+            {
+                context.SetError(RE_FORMAT("cannot find custom parser %s %s", CustomParserName.c_str(), context.GetFileLocation(file).c_str()));
+                return false;
+            }
+        }
+        return RealParser->Parse(file, context, token, outNode);
+    }
+
     DEFINE_DERIVED_CLASS_WITHOUT_NEW(OptionNodeParser, ASTNodeParser)
     // [a] in BNF
     bool OptionNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)

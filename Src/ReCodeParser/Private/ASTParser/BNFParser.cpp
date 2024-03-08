@@ -80,6 +80,20 @@ namespace ReParser::BNF
         }
     }
 
+    Re::SharedPtr<AST::ASTParser> BNFFile::GenerateASTParser() const
+    {
+        auto it = GetRuleLexers().find("root");
+        if(it == GetRuleLexers().end())
+        {
+            RE_ERROR_F("cannot find a root rule to generate ASTParser !! %s", GetFilePath().c_str());
+            return nullptr;
+        }
+        auto result = Re::MakeShared<AST::ASTParser>(it->second);
+
+        return result;
+    }
+
+
     Re::String BNFFile::ToString() const
     {
         Re::String Result;

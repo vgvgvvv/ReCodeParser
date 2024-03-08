@@ -47,6 +47,20 @@ namespace ReParser::AST
         Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;
     };
 
+    class CustomNodeParser : public ASTNodeParser
+    {
+        DECLARE_DERIVED_CLASS(CustomNodeParser, ASTNodeParser)
+    public:
+        explicit CustomNodeParser(const Re::String& customParserName)
+            : CustomParserName(customParserName)
+        {
+        }
+        bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) override;
+    private:
+        Re::SharedPtr<ASTNodeParser> RealParser{};
+        Re::String CustomParserName{};
+    };
+
     // [A] is optional
     class OptionNodeParser : public ASTNodeParser
     {

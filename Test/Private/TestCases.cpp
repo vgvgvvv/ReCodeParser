@@ -20,3 +20,16 @@ void TestBNF()
 	RE_ASSERT(bnfFile);
 	RE_LOG(bnfFile->ToString())
 }
+
+void TestASTParser()
+{
+	auto path = std::filesystem::path{__FILE__}.parent_path() / "Test.bnf";
+	auto bnfFile = ReParser::BNF::BNFFile::Parse(path.string());
+
+	auto parser = bnfFile->GenerateASTParser();
+	parser->InitParserSource("{TestValue} > 100");
+	parser->ParseWithoutFile();
+	auto astTree = parser->GetASTTree();
+
+	RE_LOG(astTree.ToString());
+}
