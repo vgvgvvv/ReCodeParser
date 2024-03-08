@@ -440,7 +440,7 @@ namespace ReParser
 				UngetChar();
 			}
 
-			token->SetConstString(Temp);
+			token->SetConstString(Temp, Length);
 			return token;
 		}
 		else

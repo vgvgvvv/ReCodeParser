@@ -171,6 +171,7 @@ namespace ReParser
 			TokenType = ETokenType::Const;
 			if(InString != Value.String)
 			{
+				std::memset(Value.String, 0, MaxStringConstSize);
 				std::strncpy(Value.String, InString, MaxLength);
 			}
 		}
