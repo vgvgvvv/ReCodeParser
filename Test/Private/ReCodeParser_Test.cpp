@@ -4,6 +4,7 @@
 int main()
 {
 	// TestIni();
-	TestBNF();
+	// TestBNF();
+	TestASTParser();
 	return 0;
 }

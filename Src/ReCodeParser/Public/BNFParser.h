@@ -64,6 +64,7 @@ namespace ReParser::BNF
 
         static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath);
         static Re::SharedPtr<BNFFile> Parse(const Re::String& filePath, const Re::String& content);
+        static Re::SharedPtr<BNFFile> ParseWithoutFile(const Re::String& content) { return Parse("UNKNOWN", content); }
 
         using RuleLexersMap = Re::Map<Re::String, Re::SharedPtr<AST::ASTNodeParser>>;
         const RuleLexersMap& GetRuleLexers() const { return RuleLexers; }
