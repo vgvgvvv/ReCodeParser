@@ -26,6 +26,8 @@ namespace ReParser::AST
             return Result;
         }
         virtual Re::String ToString() const = 0;
+        Re::String ToStringNonConst() { return ToString(); }
+        Re::List<ASTNode*> GetChildNodesWithListNonConst() { return GetChildNodesWithList(); }
     private:
         Re::String Name;
     };

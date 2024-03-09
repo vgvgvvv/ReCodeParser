@@ -19,7 +19,7 @@ namespace ReParser::AST
 
     Re::String ASTTree::ToString() const
     {
-        BTTree<ASTNode> Printer(Re::SharedPtrGet(Root), &ASTNode::GetChildNodesWithList, &ASTNode::ToString);
+        BTTree<ASTNode> Printer(Re::SharedPtrGet(Root), &ASTNode::GetChildNodesWithListNonConst, &ASTNode::ToStringNonConst);
         return Printer.toString();
     }
 

@@ -101,8 +101,8 @@ class BTTree
 {
   public:
 	// Typedefs for the getter functions
-	typedef std::list<T*> (T::*childrenGetterFcn) ( void) const;
-	typedef std::string   (T::*dataGetterFcn)    ( void) const;
+	typedef std::list<T*> (T::*childrenGetterFcn) ( void);
+	typedef std::string   (T::*dataGetterFcn)    ( void);
 	// Constructor
 	BTTree(T* head, childrenGetterFcn f1, dataGetterFcn f2);
 	void print();
