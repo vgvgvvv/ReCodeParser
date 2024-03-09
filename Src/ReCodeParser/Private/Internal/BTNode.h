@@ -19,6 +19,11 @@
 #include <vector>
 #include <memory>
 
+namespace BTNodeInternal
+{
+	extern std::string BTNodeBuilder;
+}
+
 // Node class
 template <class T>
 class BTNode
@@ -96,11 +101,12 @@ class BTTree
 {
   public:
 	// Typedefs for the getter functions
-	typedef std::list<T*> (T::*childrenGetterFcn)( void);
-	typedef std::string   (T::*dataGetterFcn)    ( void);
+	typedef std::list<T*> (T::*childrenGetterFcn) ( void) const;
+	typedef std::string   (T::*dataGetterFcn)    ( void) const;
 	// Constructor
 	BTTree(T* head, childrenGetterFcn f1, dataGetterFcn f2);
 	void print();
+	std::string toString();
 
   private:
 	std::shared_ptr<BTNode<T>> _head;

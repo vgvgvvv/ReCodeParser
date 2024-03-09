@@ -22,6 +22,13 @@ namespace ReParser::AST
             return IdToken;
         }
 
+        void GetChildNodes(Re::Vector<ASTNodePtr>& outChildren) const override { }
+
+        Re::String ToString() const override
+        {
+            return IdToken.GetTokenName();
+        }
+
     private:
         Token IdToken{};
     };
@@ -42,6 +49,19 @@ namespace ReParser::AST
         const Re::Vector<ASTNodePtr>& GetSubNodes() const
         {
             return SubNodes;
+        }
+
+        void GetChildNodes(Re::Vector<ASTNodePtr>& outChildren) const override
+        {
+            for (auto& node : SubNodes)
+            {
+                outChildren.push_back(node);
+            }
+        }
+
+        Re::String ToString() const override
+        {
+            return "(Group)";
         }
 
     private:
@@ -83,6 +103,13 @@ namespace ReParser::AST
         const Token& GetToken() const
         {
             return ConstToken;
+        }
+
+        void GetChildNodes(Re::Vector<ASTNodePtr>& outChildren) const override {}
+
+        Re::String ToString() const override
+        {
+            return ConstToken.GetTokenName();
         }
 
     private:

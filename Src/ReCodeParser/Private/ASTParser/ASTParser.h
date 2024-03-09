@@ -5,17 +5,30 @@
 namespace ReParser::AST
 {
     class ASTParser;
+    class ASTNode;
 
+    using ASTNodePtr = Re::SharedPtr<ASTNode>;
     class ASTNode
     {
         DECLARE_CLASS(ASTNode)
     public:
         virtual ~ASTNode() = default;
+        virtual void GetChildNodes(Re::Vector<ASTNodePtr>& outChildren) const = 0;
+        Re::List<ASTNode*> GetChildNodesWithList() const
+        {
+            Re::List<ASTNode*> Result;
+            Re::Vector<ASTNodePtr> Children;
+            GetChildNodes(Children);
+            for (const auto & node : Children)
+            {
+                Result.push_back(Re::SharedPtrGet(node));
+            }
+            return Result;
+        }
         virtual Re::String ToString() const = 0;
     private:
         Re::String Name;
     };
-    using ASTNodePtr = Re::SharedPtr<ASTNode>;
 
     template<typename T, class ... Ts>
     Re::SharedPtr<T> CreateASTNode(Ts&& ... args)

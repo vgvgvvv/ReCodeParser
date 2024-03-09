@@ -1,5 +1,6 @@
 #include "ASTParser.h"
 #include "Private/Internal/BaseParser.h"
+#include "Private/Internal/BTNode.h"
 
 namespace ReParser::AST
 {
@@ -18,7 +19,8 @@ namespace ReParser::AST
 
     Re::String ASTTree::ToString() const
     {
-        return Root->ToString();
+        BTTree<ASTNode> Printer(Re::SharedPtrGet(Root), &ASTNode::GetChildNodesWithList, &ASTNode::ToString);
+        return Printer.toString();
     }
 
     bool ASTParser::CompileDeclaration(ICodeFile* file, const Token& token)

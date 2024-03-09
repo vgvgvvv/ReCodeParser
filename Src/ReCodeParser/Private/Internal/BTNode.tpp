@@ -7,6 +7,7 @@
 
 #include "BTNode.h"
 #include <climits>
+#include <iostream>
 
 #define CALL_MEMBER_FN(object,ptrToMember)  ((object).*(ptrToMember))
 
@@ -253,7 +254,8 @@ void BTNode<T>::printLine(std::size_t ln, std::vector<std::unique_ptr<std::list<
 			printSpace();
 		}
 	}
-	std::cout << std::endl;
+	BTNodeInternal::BTNodeBuilder += "\n";
+	//std::cout << std::endl;
 }
 
 /**
@@ -283,7 +285,8 @@ void BTNode<T>::printPreline(std::size_t ln, std::vector<std::unique_ptr<std::li
 			printSpace();
 		}
 	}
-	std::cout << std::endl;
+	BTNodeInternal::BTNodeBuilder += "\n";
+	//std::cout << std::endl;
 }
 
 /**
@@ -393,7 +396,8 @@ int BTNode<T>::parentPositionRelToChildren(std::size_t c, std::unique_ptr<std::l
  */
 template <class T>
 std::size_t BTNode<T>::printNodeData() {
-	std::cout << getData();
+	// std::cout << getData();
+	BTNodeInternal::BTNodeBuilder += getData();
 	return _wself; // Return the number of characters printed
 }
 
@@ -403,27 +407,32 @@ std::size_t BTNode<T>::printNodeData() {
 
 template <class T>
 void BTNode<T>::printSpace() {
-	std::cout << " ";
+	//std::cout << " ";
+	BTNodeInternal::BTNodeBuilder += " ";
 }
 
 template <class T>
 void BTNode<T>::printUnderscore() {
-	std::cout << "_";
+	// std::cout << "_";
+	BTNodeInternal::BTNodeBuilder += "_";
 }
 
 template <class T>
 void BTNode<T>::printLeftChildren() {
-	std::cout << "/";
+	// std::cout << "/";
+	BTNodeInternal::BTNodeBuilder += "/";
 }
 
 template <class T>
 void BTNode<T>::printRightChildren() {
-	std::cout << "\\";
+	// std::cout << "\\";
+	BTNodeInternal::BTNodeBuilder += "\\";
 }
 
 template <class T>
 void BTNode<T>::printVerticalChildren() {
-	std::cout << "|";
+	// std::cout << "|";
+	BTNodeInternal::BTNodeBuilder += "|";
 }
 
 
@@ -443,5 +452,15 @@ template <class T>
 void BTTree<T>::print()
 {
 	// Consider using the std::shared_ptr_of_this()
+	BTNodeInternal::BTNodeBuilder.clear();
 	_head->printTree(_head);
+	std::cout << BTNodeInternal::BTNodeBuilder;
+}
+
+template <class T>
+std::string BTTree<T>::toString()
+{
+	BTNodeInternal::BTNodeBuilder.clear();
+	_head->printTree(_head);
+	return BTNodeInternal::BTNodeBuilder;
 }
