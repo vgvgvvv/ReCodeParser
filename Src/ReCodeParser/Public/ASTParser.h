@@ -2,6 +2,13 @@
 #include "ReClassInfo.h"
 #include "Private/Internal/BaseParser.h"
 
+#define DEBUG_AST_PARSER 1
+#if DEBUG_AST_PARSER
+#define TRACE_AST_PARSE_F(Fmt, ...) RE_LOG_F(Fmt, __VA_ARGS__)
+#else
+#define TRACE_AST_PARSE_F(...)
+#endif
+
 namespace ReParser::AST
 {
     class ASTParser;

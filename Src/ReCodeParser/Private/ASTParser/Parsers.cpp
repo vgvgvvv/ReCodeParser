@@ -37,11 +37,11 @@ namespace ReParser::AST
             }
             if(rule->Parse(file, context, token, outNode))
             {
-               return true;
+                TRACE_AST_PARSE_F("%s try parse %s by %s succ", GetName(), token.GetTokenName().c_str(),  rule->ToString().c_str());
+                return true;
             }
-            context.UngetToken(token);
-            auto nextToken = context.GetToken(file);
-            RE_ASSERT(*nextToken == token);
+            TRACE_AST_PARSE_F("%s try parse %s by %s failed", GetName(), token.GetTokenName().c_str(), rule->ToString().c_str());
+            context.ResetToToken(token);
         }
         return false;
     }
@@ -77,9 +77,11 @@ namespace ReParser::AST
     bool GroupNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
         Re::SharedPtr<GroupNode> result = Re::MakeShared<GroupNode>();
-        Token currentToken = token;
+        context.UngetToken(token);
         for (auto& subRule : SubRules)
         {
+            auto nextToken = context.GetToken();
+            Token currentToken = *nextToken;
             auto rule = Re::SharedPtrGet(subRule);
             if(!rule)
             {
@@ -88,16 +90,14 @@ namespace ReParser::AST
             ASTNodePtr subNode;
             if(!rule->Parse(file, context, currentToken, &subNode))
             {
-                context.UngetToken(currentToken);
-                auto nextToken = context.GetToken(file);
-                RE_ASSERT(*nextToken == currentToken);
+                TRACE_AST_PARSE_F("%s try parse %s by %s failed", GetName(), currentToken.GetTokenName().c_str(), rule->ToString().c_str());
+                context.ResetToToken(token);
                 return false;
             }
             else
             {
+                TRACE_AST_PARSE_F("%s try parse %s by %s succ", GetName(), currentToken.GetTokenName().c_str(), rule->ToString().c_str());
                 result->AppendNode(subNode);
-                auto nextToken = context.GetToken();
-                currentToken = *nextToken;
             }
         }
 

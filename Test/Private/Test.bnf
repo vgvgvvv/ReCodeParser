@@ -4,4 +4,4 @@
 <root>          ::=     <expr>
 <customValue>   ::=     "{" <name> "}"
 <op>            ::=     "==" | ">" | "<" | ">=" | "<=" | "&&" | "||"
-<expr>          ::=     "(" <expr> ")" | <customValue> | <expr> <op> <expr>
+<expr>          ::=     <customValue> | <expr> <op> <expr> | "(" <expr> ")"

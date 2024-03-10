@@ -111,6 +111,7 @@ namespace ReParser
 
         void UngetToken(const Token& Token);
 		void UngetToken(const Re::SharedPtr<Token>& Token);
+		void ResetToToken(const Token& Token);
 
 		Re::SharedPtr<Token>  GetIdentifier(bool bNoConsts = false);
 		Re::SharedPtr<Token> GetSymbol();

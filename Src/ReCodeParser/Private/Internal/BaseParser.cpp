@@ -612,7 +612,14 @@ namespace ReParser
 		InputLine = Token->StartLine;
 	}
 
-	Re::SharedPtr<Token> BaseParser::GetIdentifier(bool bNoConsts)
+    void BaseParser::ResetToToken(const Token& Token)
+    {
+    	UngetToken(Token);
+    	auto tempToken = GetToken();
+    	RE_ASSERT(Token == *tempToken);
+    }
+
+    Re::SharedPtr<Token> BaseParser::GetIdentifier(bool bNoConsts)
 	{
 		auto Token = GetToken(bNoConsts);
 		if (!Token)
