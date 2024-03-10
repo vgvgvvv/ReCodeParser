@@ -3,7 +3,8 @@
 #include <filesystem>
 
 #include "IniParser.h"
-#include "../../Src/ReCodeParser/Public/BNFParser.h"
+#include "BNFParser.h"
+#include "ASTParser/Nodes.h"
 
 void TestIni()
 {
@@ -20,6 +21,28 @@ void TestBNF()
 	RE_ASSERT(bnfFile);
 	RE_LOG(bnfFile->ToString())
 }
+
+namespace ReParser::AST
+{
+	class VariableNodeParser : public ASTNodeParser
+	{
+		DECLARE_DERIVED_CLASS(VariableNodeParser, ASTNodeParser)
+	public:
+		bool Parse(ReParser::ICodeFile* file, ReParser::AST::ASTParser& context, const ReParser::Token& token, ReParser::AST::ASTNodePtr* outNode) override
+		{
+			using namespace ReParser;
+			if(token.GetTokenType() == ReParser::ETokenType::Identifier)
+			{
+				*outNode = AST::CreateASTNode<AST::IdentifierNode>(token);
+				return true;
+			}
+			return false;
+		}
+
+	};
+	DEFINE_DERIVED_CLASS(VariableNodeParser, ASTNodeParser)
+}
+
 
 void TestASTParser()
 {

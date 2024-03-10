@@ -7,7 +7,7 @@ namespace ReParser::AST
     // node below is for basic tokens
 
     // identifier token
-    class IdentifierNode : public ASTNode
+    class RECODEPARSER_API IdentifierNode : public ASTNode
     {
         DECLARE_DERIVED_CLASS(IdentifierNode, ASTNode)
     public:
@@ -33,7 +33,7 @@ namespace ReParser::AST
         Token IdToken{};
     };
 
-    class GroupNode : public ASTNode
+    class RECODEPARSER_API GroupNode : public ASTNode
     {
         DECLARE_DERIVED_CLASS(GroupNode, ASTNode)
     public:
@@ -70,7 +70,7 @@ namespace ReParser::AST
 
 
     // symbol token
-    class SymbolNode : public ASTNode
+    class RECODEPARSER_API SymbolNode : public ASTNode
     {
         DECLARE_DERIVED_CLASS(SymbolNode, ASTNode)
     public:
@@ -90,7 +90,7 @@ namespace ReParser::AST
     };
 
     // const value
-    class ConstNode : public ASTNode
+    class RECODEPARSER_API ConstNode : public ASTNode
     {
         DECLARE_DERIVED_CLASS(ConstNode, ASTNode)
     public:
@@ -117,7 +117,7 @@ namespace ReParser::AST
     };
 
     // number token
-    class NumNode : public ConstNode
+    class RECODEPARSER_API NumNode : public ConstNode
     {
         DECLARE_DERIVED_CLASS(NumNode, ConstNode)
     public:
@@ -133,7 +133,7 @@ namespace ReParser::AST
     };
 
     // string token
-    class StringNode : public ConstNode
+    class RECODEPARSER_API StringNode : public ConstNode
     {
         DECLARE_DERIVED_CLASS(StringNode, ConstNode)
     public:

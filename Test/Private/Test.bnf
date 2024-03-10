@@ -1,5 +1,5 @@
 
-<name>          ::=     <RequiredIdentifierNodeParser>
+<name>          ::=     <VariableNodeParser>
 
 <root>          ::=     <expr>
 <customValue>   ::=     "{" <name> "}"

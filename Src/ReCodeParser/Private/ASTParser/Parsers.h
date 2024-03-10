@@ -6,7 +6,7 @@ namespace ReParser::AST
 // parser below is used for BNF
 
     // 'A' or "A"
-    class RequiredIdentifierNodeParser : public ASTNodeParser
+    class RECODEPARSER_API RequiredIdentifierNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(RequiredIdentifierNodeParser, ASTNodeParser)
     public:
@@ -21,7 +21,7 @@ namespace ReParser::AST
     };
 
     // A | B
-    class OrNodeParser : public ASTNodeParser
+    class RECODEPARSER_API OrNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(OrNodeParser, ASTNodeParser)
     public:
@@ -34,7 +34,7 @@ namespace ReParser::AST
     };
 
     // (A B)
-    class GroupNodeParser : public ASTNodeParser
+    class RECODEPARSER_API GroupNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(GroupNodeParser, ASTNodeParser)
     public:
@@ -47,7 +47,7 @@ namespace ReParser::AST
         Re::Vector<Re::SharedPtr<ASTNodeParser>> SubRules;
     };
 
-    class CustomNodeParser : public ASTNodeParser
+    class RECODEPARSER_API CustomNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(CustomNodeParser, ASTNodeParser)
     public:
@@ -62,7 +62,7 @@ namespace ReParser::AST
     };
 
     // [A] is optional
-    class OptionNodeParser : public ASTNodeParser
+    class RECODEPARSER_API OptionNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(OptionNodeParser, ASTNodeParser)
     public:
@@ -77,7 +77,7 @@ namespace ReParser::AST
     };
 
     // {A} or A* optional repeat
-    class OptionalRepeatNodeParser : public ASTNodeParser
+    class RECODEPARSER_API OptionalRepeatNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(OptionalRepeatNodeParser, ASTNodeParser)
     public:
@@ -92,7 +92,7 @@ namespace ReParser::AST
     };
 
     // A+ at least one repeat
-    class RepeatNodeParser : public ASTNodeParser
+    class RECODEPARSER_API RepeatNodeParser : public ASTNodeParser
     {
         DECLARE_DERIVED_CLASS(RepeatNodeParser, ASTNodeParser)
     public:

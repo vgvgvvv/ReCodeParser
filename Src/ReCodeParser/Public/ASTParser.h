@@ -8,7 +8,7 @@ namespace ReParser::AST
     class ASTNode;
 
     using ASTNodePtr = Re::SharedPtr<ASTNode>;
-    class ASTNode
+    class RECODEPARSER_API ASTNode
     {
         DECLARE_CLASS(ASTNode)
     public:
@@ -38,13 +38,13 @@ namespace ReParser::AST
         return Re::MakeShared<T>(std::forward<Ts>(args)...);
     }
 
-    class ASTNodeParser
+    class RECODEPARSER_API ASTNodeParser
     {
         DECLARE_CLASS(ASTNodeParser)
     public:
         virtual ~ASTNodeParser() = default;
         virtual bool Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode) = 0;
-        virtual Re::String ToString() const = 0;
+        virtual Re::String ToString() const { return RE_FORMAT("*%s*", StaticClass().GetName()); }
 
         void SetDefinedName(const Re::String& name)
         {
