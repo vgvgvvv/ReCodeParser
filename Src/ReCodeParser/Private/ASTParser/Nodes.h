@@ -14,7 +14,7 @@ namespace ReParser::AST
         explicit IdentifierNode(const Token& token)
             : IdToken(token)
         {
-            RE_ASSERT(token.GetTokenType() == ETokenType::Identifier);
+            RE_ASSERT(token.GetTokenType() == ETokenType::Identifier || token.GetTokenType() == ETokenType::Symbol);
         }
 
         const Token& GetToken() const

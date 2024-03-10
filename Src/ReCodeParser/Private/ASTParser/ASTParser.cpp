@@ -10,10 +10,6 @@ namespace ReParser::AST
 
     bool ASTTree::Parse(ASTNodeParser& parser, ICodeFile* file, ASTParser& context, const Token& token)
     {
-        if(!Root)
-        {
-            return false;
-        }
         return parser.Parse(file, context, token, &Root);
     }
 

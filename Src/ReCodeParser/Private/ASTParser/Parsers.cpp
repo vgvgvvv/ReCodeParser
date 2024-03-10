@@ -77,6 +77,7 @@ namespace ReParser::AST
     bool GroupNodeParser::Parse(ICodeFile* file, ASTParser& context, const Token& token, ASTNodePtr* outNode)
     {
         Re::SharedPtr<GroupNode> result = Re::MakeShared<GroupNode>();
+        Token currentToken = token;
         for (auto& subRule : SubRules)
         {
             auto rule = Re::SharedPtrGet(subRule);
@@ -85,14 +86,19 @@ namespace ReParser::AST
                 return false;
             }
             ASTNodePtr subNode;
-            if(!rule->Parse(file, context, token, &subNode))
+            if(!rule->Parse(file, context, currentToken, &subNode))
             {
-                context.UngetToken(token);
+                context.UngetToken(currentToken);
                 auto nextToken = context.GetToken(file);
-                RE_ASSERT(*nextToken == token);
+                RE_ASSERT(*nextToken == currentToken);
                 return false;
             }
-            result->AppendNode(subNode);
+            else
+            {
+                result->AppendNode(subNode);
+                auto nextToken = context.GetToken();
+                currentToken = *nextToken;
+            }
         }
 
         return true;
