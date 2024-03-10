@@ -1,6 +1,6 @@
 #pragma once
 #include "ReClassInfo.h"
-#include "Internal/BaseParser.h"
+#include "Private/Internal/BaseParser.h"
 
 namespace ReParser::AST
 {
@@ -69,7 +69,7 @@ namespace ReParser::AST
         Re::String CustomName;
     };
 
-    class ASTTree
+    class RECODEPARSER_API ASTTree
     {
     public:
         bool Parse(ASTNodeParser& parser, ICodeFile* file, ASTParser& context, const Token& token);
@@ -81,7 +81,7 @@ namespace ReParser::AST
         Re::SharedPtr<ASTNode> Root;
     };
 
-    class ASTParser : public BaseParserWithFile
+    class RECODEPARSER_API ASTParser : public BaseParserWithFile
     {
         DECLARE_CLASS(ASTParser)
     public:

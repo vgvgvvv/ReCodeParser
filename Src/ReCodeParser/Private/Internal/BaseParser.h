@@ -1,4 +1,5 @@
 #pragma once
+#include "ReCodeParserDefine.h"
 #include "ReClassInfo.h"
 #include "ReCppCommon.h"
 #include "Token.h"
@@ -26,7 +27,7 @@ namespace ReParser
 		virtual void OnNextToken(BaseParser& parser, const Token& token) { }
 	};
 
-	class BaseParser
+	class RECODEPARSER_API BaseParser
 	{
 	public:
 

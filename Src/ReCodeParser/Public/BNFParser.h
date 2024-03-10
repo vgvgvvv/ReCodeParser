@@ -1,6 +1,6 @@
 #pragma once
 #include "ReCodeParserDefine.h"
-#include "Private/ASTParser/ASTParser.h"
+#include "ASTParser.h"
 #include "Private/Internal/BaseParser.h"
 
 namespace ReParser::AST

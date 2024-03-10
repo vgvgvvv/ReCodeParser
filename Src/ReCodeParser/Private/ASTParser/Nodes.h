@@ -1,5 +1,5 @@
 #pragma once
-#include "ASTParser.h"
+#include "../../Public/ASTParser.h"
 
 namespace ReParser::AST
 {

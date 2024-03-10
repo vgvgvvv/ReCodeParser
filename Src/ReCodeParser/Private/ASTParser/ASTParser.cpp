@@ -1,4 +1,4 @@
-#include "ASTParser.h"
+#include "../../Public/ASTParser.h"
 #include "Private/Internal/BaseParser.h"
 #include "Private/Internal/BTNode.h"
 
